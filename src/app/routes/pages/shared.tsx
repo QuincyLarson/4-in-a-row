@@ -1,4 +1,5 @@
 import type { CSSProperties, PropsWithChildren, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function PageSection({
   eyebrow,
@@ -128,6 +129,33 @@ export function InlineButton({
   );
 }
 
+export function RouteButton({
+  to,
+  children,
+  disabled = false,
+  tone = 'default',
+}: PropsWithChildren<{
+  to: string;
+  disabled?: boolean;
+  tone?: 'default' | 'accent' | 'danger';
+}>) {
+  const navigate = useNavigate();
+
+  return (
+    <InlineButton
+      tone={tone}
+      disabled={disabled}
+      onClick={() => {
+        if (!disabled) {
+          navigate(to);
+        }
+      }}
+    >
+      {children}
+    </InlineButton>
+  );
+}
+
 export function CardGrid({ children }: PropsWithChildren) {
   return <div style={shared.grid}>{children}</div>;
 }
@@ -202,21 +230,25 @@ const shared: Record<string, CSSProperties> = {
   chip: {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '0.4rem 0.75rem',
-    borderRadius: '999px',
-    fontSize: '0.86rem',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
+    padding: '0.28rem 0.55rem',
+    borderRadius: '0.65rem',
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    border: '1px solid rgba(245, 246, 247, 0.05)',
   },
   button: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '2.75rem',
-    padding: '0.75rem 1.05rem',
-    borderRadius: '999px',
+    minHeight: '2.95rem',
+    padding: '0.85rem 1.15rem',
+    borderRadius: '0.95rem',
     color: 'var(--ink)',
     border: '1px solid transparent',
     fontWeight: 600,
+    boxShadow: '0 12px 24px rgba(0, 0, 0, 0.18)',
   },
   list: {
     display: 'grid',

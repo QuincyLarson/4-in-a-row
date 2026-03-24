@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom';
-
 import { battleAis } from '../../../content';
 import { isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, PageSection } from './shared';
+import { Card, CardGrid, Chip, PageSection, RouteButton } from './shared';
 
 export function BattlePage() {
   const {
@@ -57,25 +55,13 @@ export function BattlePage() {
                 ))}
               </ul>
               {ai.role !== 'analysis' ? (
-                <Link
-                  to={unlocked ? `/play?ai=${ai.id}` : '/learn'}
-                  style={{
-                    ...battle.link,
-                    opacity: unlocked ? 1 : 0.7,
-                  }}
-                >
-                  {unlocked ? 'Start this matchup' : 'Unlock in Learn'}
-                </Link>
+                <RouteButton to={unlocked ? `/play?ai=${ai.id}` : '/learn'} tone={unlocked ? 'accent' : 'default'}>
+                  {unlocked ? 'Start this match' : 'Unlock in Learn'}
+                </RouteButton>
               ) : (
-                <Link
-                  to={unlocked ? '/sandbox' : '/learn'}
-                  style={{
-                    ...battle.link,
-                    opacity: unlocked ? 1 : 0.7,
-                  }}
-                >
+                <RouteButton to={unlocked ? '/sandbox' : '/learn'} tone={unlocked ? 'accent' : 'default'}>
                   {unlocked ? 'Open analysis sandbox' : 'Reach Oracle to unlock'}
-                </Link>
+                </RouteButton>
               )}
             </Card>
           );
@@ -91,10 +77,5 @@ const battle = {
     paddingLeft: '1rem',
     color: 'var(--muted)',
     lineHeight: 1.7,
-  },
-  link: {
-    color: 'var(--accent)',
-    textDecoration: 'none',
-    fontWeight: 600,
   },
 };

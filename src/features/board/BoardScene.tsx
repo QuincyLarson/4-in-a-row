@@ -32,6 +32,7 @@ const HOVER_CHIP_Y = 46;
 type BoardSceneProps = {
   board: BoardState;
   previewColumn: number | null;
+  reducedMotion?: boolean;
   showPreview?: boolean;
   onHoverColumn?: (column: number | null) => void;
   onSelectColumn?: (column: number) => void;
@@ -51,6 +52,7 @@ type BoardSceneProps = {
 export function BoardScene({
   board,
   previewColumn,
+  reducedMotion = false,
   showPreview = true,
   onHoverColumn,
   onSelectColumn,
@@ -245,16 +247,17 @@ export function BoardScene({
                     key={`${col}-${row}-${owner}`}
                     className={`board-chip${isLatest ? ' board-chip--latest-hole' : ''}`}
                     transform={`translate(${columnX(col)} ${columnY(row)})`}
-                    style={
-                      isLatest
-                        ? ({
-                            '--drop-offset': `${getDropOffsetPx(row)}px`,
-                            '--drop-duration': `${getDropDurationMs(row)}ms`,
-                          } as CSSProperties)
-                        : undefined
-                    }
                   >
                     {owner === 'human' ? <HumanChip /> : <CpuChip />}
+                    {isLatest ? (
+                      <animate
+                        attributeName="opacity"
+                        values={reducedMotion ? '0;1;1' : '0;0;1;1'}
+                        keyTimes={reducedMotion ? '0;0.45;1' : '0;0.72;0.9;1'}
+                        dur={`${getDropDurationMs(row, reducedMotion)}ms`}
+                        fill="freeze"
+                      />
+                    ) : null}
                   </g>
                 );
               }),
@@ -266,14 +269,8 @@ export function BoardScene({
               className="board-chip board-chip--drop-overlay"
               data-owner={latestOwner}
               transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
-              style={
-                {
-                  '--drop-offset': `${getDropOffsetPx(dropRow)}px`,
-                  '--drop-duration': `${getDropDurationMs(dropRow)}ms`,
-                } as CSSProperties
-              }
             >
-              {latestOwner === 'human' ? <HumanChip /> : <CpuChip />}
+              <DroppingChipMotion owner={latestOwner} row={dropRow} reducedMotion={reducedMotion} />
             </g>
           ) : null}
 
@@ -342,22 +339,8 @@ export function BoardScene({
             <g
               className="board-impact"
               transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
-              style={
-                {
-                  '--impact-delay': `${getImpactDelayMs(dropRow)}ms`,
-                } as CSSProperties
-              }
             >
-              <circle r="28" fill="none" stroke="#acd157" strokeWidth="4" />
-              <circle
-                r="28"
-                fill="none"
-                stroke="#f5f6f7"
-                strokeOpacity="0.6"
-                strokeWidth="2"
-                strokeDasharray="5 5"
-              />
-              <circle r="10" fill="#0a0a23" fillOpacity="0.15" />
+              <ImpactPulse row={dropRow} reducedMotion={reducedMotion} />
             </g>
           ) : null}
 
@@ -395,6 +378,127 @@ export function BoardScene({
       </div>
       <p style={boardSceneStyles.status}>{status}</p>
     </div>
+  );
+}
+
+function DroppingChipMotion({
+  owner,
+  row,
+  reducedMotion,
+}: {
+  owner: 'human' | 'cpu';
+  row: number;
+  reducedMotion: boolean;
+}) {
+  const dropOffset = reducedMotion
+    ? Math.min(120, getDropOffsetPx(row))
+    : getDropOffsetPx(row);
+  const durationMs = getDropDurationMs(row, reducedMotion);
+
+  return (
+    <g transform={`translate(0 ${-dropOffset})`}>
+      {owner === 'human' ? <HumanChip /> : <CpuChip />}
+      <animateTransform
+        attributeName="transform"
+        type="translate"
+        values={
+          reducedMotion
+            ? `0 ${-dropOffset}; 0 0`
+            : `0 ${-dropOffset}; 0 0; 0 8; 0 0`
+        }
+        keyTimes={reducedMotion ? '0;1' : '0;0.74;0.88;1'}
+        calcMode={reducedMotion ? 'linear' : 'spline'}
+        keySplines={
+          reducedMotion
+            ? undefined
+            : '0.22 1 0.36 1; 0.14 0.82 0.3 1; 0.2 0.9 0.3 1'
+        }
+        dur={`${durationMs}ms`}
+        fill="freeze"
+      />
+      <animate
+        attributeName="opacity"
+        values={reducedMotion ? '1;0' : '1;1;1;0'}
+        keyTimes={reducedMotion ? '0;1' : '0;0.88;0.98;1'}
+        dur={`${durationMs}ms`}
+        fill="freeze"
+      />
+    </g>
+  );
+}
+
+function ImpactPulse({ row, reducedMotion }: { row: number; reducedMotion: boolean }) {
+  const durationMs = reducedMotion ? 140 : 460;
+  const beginMs = getImpactDelayMs(row, reducedMotion);
+
+  return (
+    <>
+      <circle r="28" fill="none" stroke="#acd157" strokeWidth="4" opacity="0">
+        <animate
+          attributeName="opacity"
+          values="0;0.92;0"
+          keyTimes="0;0.18;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+        <animateTransform
+          attributeName="transform"
+          type="scale"
+          values="0.4;1;1.35"
+          keyTimes="0;0.18;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+      </circle>
+              <circle
+                r="28"
+                fill="none"
+                stroke="#f5f6f7"
+                strokeOpacity="0.6"
+                strokeWidth="2"
+                strokeDasharray="5 5"
+                opacity="0"
+              >
+        <animate
+          attributeName="opacity"
+          values="0;0.75;0"
+          keyTimes="0;0.18;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+        <animateTransform
+          attributeName="transform"
+          type="scale"
+          values="0.55;1;1.25"
+          keyTimes="0;0.18;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+      </circle>
+      <circle r="10" fill="#0a0a23" fillOpacity="0.18" opacity="0">
+        <animate
+          attributeName="opacity"
+          values="0;0.24;0"
+          keyTimes="0;0.2;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+        <animateTransform
+          attributeName="transform"
+          type="scale"
+          values="0.5;1;1.1"
+          keyTimes="0;0.2;1"
+          dur={`${durationMs}ms`}
+          begin={`${beginMs}ms`}
+          fill="freeze"
+        />
+      </circle>
+    </>
   );
 }
 

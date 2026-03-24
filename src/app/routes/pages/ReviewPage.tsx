@@ -69,6 +69,7 @@ export function ReviewPage() {
           lessonTitle={currentTarget.target!.lesson.title}
           summary={lessonSummaryForStep(currentTarget.target!.lesson, currentTarget.target!.step)}
           step={currentTarget.target!.step}
+          reducedMotion={save.settings.reducedMotion}
           onResolved={(correct, nextDueAt) => {
             actions.resolveReview(
               currentTarget.entry.puzzleId,
@@ -178,6 +179,7 @@ function ReviewDrill({
   lessonTitle,
   summary,
   step,
+  reducedMotion,
   onResolved,
 }: {
   entry: {
@@ -191,6 +193,7 @@ function ReviewDrill({
   lessonTitle: string;
   summary: string;
   step: NonNullable<ReturnType<typeof findReviewTarget>>['step'];
+  reducedMotion: boolean;
   onResolved: (correct: boolean, nextDueAt: string) => void;
 }) {
   const board = boardFromHumanMoves(step.position?.moves ?? [], 'human');
@@ -222,6 +225,7 @@ function ReviewDrill({
       <BoardScene
         board={board}
         previewColumn={hintColumn ?? preview}
+        reducedMotion={reducedMotion}
         onHoverColumn={(column) => {
           if (column !== null) {
             setPreview(column);
@@ -298,7 +302,8 @@ const review = {
   },
   link: {
     color: 'var(--accent)',
-    textDecoration: 'none',
+    textDecoration: 'underline',
+    textUnderlineOffset: '0.18em',
     fontWeight: 600,
   },
   actions: {

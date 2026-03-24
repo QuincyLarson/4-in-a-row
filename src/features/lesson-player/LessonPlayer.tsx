@@ -134,6 +134,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
                 <BoardScene
                   board={authoredBoard}
                   previewColumn={null}
+                  reducedMotion={state.save.settings.reducedMotion}
                   status={step.prompt}
                   disabled
                 />
@@ -143,6 +144,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
             <LessonChallenge
               key={step.id}
               step={step}
+              reducedMotion={state.save.settings.reducedMotion}
               onCorrect={() => {
                 markResolved(step);
                 setStepFeedback(step.successMessage ?? 'Good. You matched the lesson idea.');
@@ -217,11 +219,13 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 
 function LessonChallenge({
   step,
+  reducedMotion,
   onCorrect,
   onWrong,
   onHintUsed,
 }: {
   step: LessonStep;
+  reducedMotion: boolean;
   onCorrect: () => void;
   onWrong: () => void;
   onHintUsed: () => void;
@@ -241,6 +245,7 @@ function LessonChallenge({
     <BoardScene
       board={board}
       previewColumn={hintColumn ?? preview}
+      reducedMotion={reducedMotion}
       onHoverColumn={(column) => {
         if (column !== null) {
           setPreview(column);

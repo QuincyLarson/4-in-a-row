@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-
 import { curriculumLessons, curriculumWorlds } from '../../../content';
 import { nextLessonForSave } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
+import { Card, CardGrid, Chip, PageSection, RouteButton } from './shared';
 
 export function HomePage() {
   const {
@@ -24,15 +22,9 @@ export function HomePage() {
       body="Play first, then learn the patterns that matter. The whole course stays local, fast, and easy to return to."
       actions={
         <>
-          <Link to="/play" style={{ textDecoration: 'none' }}>
-            <InlineButton tone="accent">Play now</InlineButton>
-          </Link>
-          <Link to={`/lesson/${nextLesson.id}`} style={{ textDecoration: 'none' }}>
-            <InlineButton>Continue course</InlineButton>
-          </Link>
-          <Link to="/review" style={{ textDecoration: 'none' }}>
-            <InlineButton>Review queue</InlineButton>
-          </Link>
+          <RouteButton to="/play" tone="accent">Play now</RouteButton>
+          <RouteButton to={`/lesson/${nextLesson.id}`}>Continue course</RouteButton>
+          <RouteButton to="/review">Review queue</RouteButton>
         </>
       }
     >
@@ -87,9 +79,9 @@ export function HomePage() {
           <p style={home.copy}>
             {nextLesson.summary}
           </p>
-          <Link to={`/lesson/${nextLesson.id}`} style={home.link}>
-            <InlineButton tone="accent">Continue with {nextLesson.title}</InlineButton>
-          </Link>
+          <RouteButton to={`/lesson/${nextLesson.id}`} tone="accent">
+            Continue with {nextLesson.title}
+          </RouteButton>
         </Card>
       </CardGrid>
     </PageSection>
@@ -109,8 +101,5 @@ const home = {
     paddingLeft: '1.25rem',
     color: 'var(--muted)',
     lineHeight: 1.65,
-  },
-  link: {
-    textDecoration: 'none',
   },
 };

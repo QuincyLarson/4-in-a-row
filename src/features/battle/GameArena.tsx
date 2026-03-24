@@ -336,6 +336,7 @@ function GameArenaSession({
         <BoardScene
           board={board}
           previewColumn={hintColumn ?? activePreview}
+          reducedMotion={save.settings.reducedMotion}
           showPreview={
             previewVisible && (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
           }

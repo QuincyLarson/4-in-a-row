@@ -14,7 +14,10 @@ export function StrategyPage() {
         title="Article not found"
         body="The static strategy page you asked for is missing from the authored content bundle."
       >
-        <Link to="/learn" style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+        <Link
+          to="/learn"
+          style={{ color: 'var(--accent)', textDecoration: 'underline', textUnderlineOffset: '0.18em' }}
+        >
           Return to Learn
         </Link>
       </PageSection>
@@ -79,7 +82,8 @@ const strategy = {
   },
   link: {
     color: 'var(--accent)',
-    textDecoration: 'none',
+    textDecoration: 'underline',
+    textUnderlineOffset: '0.18em',
     fontWeight: 600,
   },
 };

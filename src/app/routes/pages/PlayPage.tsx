@@ -113,7 +113,8 @@ const play = {
   },
   link: {
     color: 'var(--accent)',
-    textDecoration: 'none',
+    textDecoration: 'underline',
+    textUnderlineOffset: '0.18em',
     fontWeight: 600,
   },
 };

@@ -115,7 +115,7 @@ describe('app routes', () => {
 
     await screen.findByRole('heading', { name: 'Named opponents that teach through pressure.' });
     expect(screen.getByText('Center Sentinel')).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Unlock in Learn' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Unlock in Learn' }).length).toBeGreaterThan(0);
 
     renderRoute('/play?ai=endgame-engine');
 
