@@ -62,8 +62,13 @@
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.2));
 }
 
-.board-chip.is-dropping {
-  animation: board-chip-drop var(--drop-duration, 440ms) var(--ease-out-quart) both;
+.board-chip--latest-hole {
+  animation: board-chip-settle-in var(--drop-duration, 440ms) linear both;
+}
+
+.board-chip--drop-overlay {
+  animation: board-chip-drop-overlay var(--drop-duration, 440ms) var(--ease-out-quart) both;
+  pointer-events: none;
 }
 
 .board-impact {
@@ -126,7 +131,8 @@
   animation-delay: 300ms;
 }
 
-body[data-motion='reduced'] .board-chip.is-dropping {
+body[data-motion='reduced'] .board-chip--latest-hole,
+body[data-motion='reduced'] .board-chip--drop-overlay {
   animation-duration: 110ms;
 }
 
@@ -134,21 +140,43 @@ body[data-motion='reduced'] .board-confetti rect {
   animation-duration: 240ms;
 }
 
-@keyframes board-chip-drop {
+@keyframes board-chip-drop-overlay {
   0% {
     transform: translate3d(0, calc(var(--drop-offset, 180px) * -1), 0) scale(0.98);
+    opacity: 1;
   }
 
   70% {
     transform: translate3d(0, 0, 0) scale(1.03);
+    opacity: 1;
   }
 
   86% {
     transform: translate3d(0, 8px, 0) scale(0.98);
+    opacity: 1;
   }
 
   100% {
     transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes board-chip-settle-in {
+  0% {
+    opacity: 0;
+  }
+
+  72% {
+    opacity: 0;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
   }
 }
 

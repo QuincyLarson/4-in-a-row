@@ -71,6 +71,10 @@ export function BoardScene({
     lastMoveColumn !== null && board.moves.length > 0
       ? lastOccupiedRow(board, lastMoveColumn)
       : null;
+  const latestOwner =
+    lastMoveColumn !== null && dropRow !== null
+      ? cellOwner(board, lastMoveColumn, dropRow)
+      : null;
   const previewRow =
     previewColumn !== null ? getDropRow(board, previewColumn) : null;
   const legal = new Set(legalMoves(board));
@@ -239,7 +243,7 @@ export function BoardScene({
                 return (
                   <g
                     key={`${col}-${row}-${owner}`}
-                    className={`board-chip${isLatest ? ' is-dropping' : ''}`}
+                    className={`board-chip${isLatest ? ' board-chip--latest-hole' : ''}`}
                     transform={`translate(${columnX(col)} ${columnY(row)})`}
                     style={
                       isLatest
@@ -256,6 +260,22 @@ export function BoardScene({
               }),
             )}
           </g>
+
+          {lastMoveColumn !== null && dropRow !== null && latestOwner ? (
+            <g
+              className="board-chip board-chip--drop-overlay"
+              data-owner={latestOwner}
+              transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
+              style={
+                {
+                  '--drop-offset': `${getDropOffsetPx(dropRow)}px`,
+                  '--drop-duration': `${getDropDurationMs(dropRow)}ms`,
+                } as CSSProperties
+              }
+            >
+              {latestOwner === 'human' ? <HumanChip /> : <CpuChip />}
+            </g>
+          ) : null}
 
           {showPreview && previewColumn !== null && legal.has(previewColumn) && previewRow !== null ? (
             <g

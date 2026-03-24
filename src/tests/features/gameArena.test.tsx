@@ -57,17 +57,36 @@ describe('GameArena', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
     });
 
-    expect(container.querySelectorAll('.board-chip')).toHaveLength(1);
+    expect(container.querySelectorAll('.board-chip')).toHaveLength(2);
+    expect(container.querySelectorAll('.board-chip--drop-overlay')).toHaveLength(1);
     expect(container.querySelector('.board-preview--hover')).toBeNull();
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
     });
-    expect(container.querySelectorAll('.board-chip')).toHaveLength(1);
+    expect(container.querySelectorAll('.board-chip')).toHaveLength(2);
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(500);
     });
     expect(container.querySelector('.board-preview--hover')).not.toBeNull();
+  });
+
+  it('shows the cpu reply as a visible dropping chip before the next human turn', async () => {
+    const { container } = render(
+      <AppStateProvider>
+        <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+      </AppStateProvider>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(520);
+    });
+
+    expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
   });
 });
