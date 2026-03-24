@@ -18,6 +18,7 @@ import { battleAiById } from '../../content';
 import { BoardScene } from '../board/BoardScene';
 import { getDropDurationMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
+import './gameArena.css';
 
 type GameArenaProps = {
   aiId?: string;
@@ -316,8 +317,8 @@ function GameArenaSession({
   }
 
   return (
-    <div style={arena.frame}>
-      <div style={arena.header}>
+    <div className="game-arena">
+      <div className="game-arena__header">
         <div>
           <h2 style={arena.title}>{title}</h2>
           <p style={arena.description}>{description}</p>
@@ -332,7 +333,7 @@ function GameArenaSession({
         </div>
       </div>
 
-      <div style={arena.grid}>
+      <div className="game-arena__layout">
         <BoardScene
           board={board}
           previewColumn={hintColumn ?? activePreview}
@@ -373,15 +374,15 @@ function GameArenaSession({
           showConfetti={result === 'win'}
         />
 
-        <aside style={arena.sidebar}>
-          <div style={arena.panel}>
+        <aside className="game-arena__sidebar">
+          <div className="game-arena__panel">
             <h3 style={arena.panelTitle}>Controls</h3>
             <ul style={arena.list}>
               <li>Arrow keys move the preview chip.</li>
               <li>Enter or Space drops the chip.</li>
               <li>H for hint, R for reset, U for undo, M for mute.</li>
             </ul>
-            <div style={arena.buttons}>
+            <div className="game-arena__buttons">
               <button type="button" style={arena.button} onClick={requestHint}>
                 Hint
               </button>
@@ -399,7 +400,7 @@ function GameArenaSession({
             </div>
           </div>
 
-          <div style={arena.panel}>
+          <div className="game-arena__panel">
             <h3 style={arena.panelTitle}>Coach</h3>
             {analysis ? (
               <div style={arena.analysis}>
@@ -526,56 +527,38 @@ const arena = {
   },
   title: {
     margin: 0,
-    fontSize: '1.2rem',
+    fontSize: '1.05rem',
   },
   description: {
-    margin: '0.4rem 0 0',
+    margin: '0.25rem 0 0',
     color: 'var(--muted)',
-    lineHeight: 1.6,
+    lineHeight: 1.5,
   },
   pills: {
     display: 'flex',
     flexWrap: 'wrap' as const,
-    gap: '0.6rem',
+    gap: '0.5rem',
   },
   pill: {
     display: 'inline-flex',
-    padding: '0.35rem 0.7rem',
+    padding: '0.3rem 0.65rem',
     borderRadius: '999px',
     background: 'rgba(127, 219, 255, 0.08)',
     color: 'var(--accent-2)',
   },
-  grid: {
-    display: 'grid',
-    gap: '1rem',
-    gridTemplateColumns: '1fr',
-  },
-  sidebar: {
-    display: 'grid',
-    gap: '1rem',
-    alignContent: 'start' as const,
-  },
-  panel: {
-    display: 'grid',
-    gap: '0.8rem',
-    padding: '1rem',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--surface)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-  },
   panelTitle: {
     margin: 0,
-    fontSize: '1rem',
+    fontSize: '0.98rem',
   },
   list: {
     margin: 0,
     paddingLeft: '1rem',
     color: 'var(--muted)',
-    lineHeight: 1.7,
+    lineHeight: 1.55,
   },
   analysis: {
     display: 'grid',
-    gap: '0.5rem',
+    gap: '0.4rem',
   },
   analysisLabel: {
     textTransform: 'capitalize' as const,
@@ -584,25 +567,25 @@ const arena = {
   analysisBody: {
     margin: 0,
     color: 'var(--muted)',
-    lineHeight: 1.7,
+    lineHeight: 1.55,
   },
   buttons: {
     display: 'flex',
-    gap: '0.65rem',
+    gap: '0.5rem',
     flexWrap: 'wrap' as const,
   },
   button: {
-    minHeight: '2.6rem',
-    padding: '0.7rem 0.95rem',
-    borderRadius: 'var(--radius-sm)',
+    minHeight: '2.4rem',
+    padding: '0.62rem 0.9rem',
+    borderRadius: '999px',
     border: '1px solid rgba(245, 246, 247, 0.12)',
     background: 'var(--bg-1)',
     color: 'var(--ink)',
   },
   buttonDanger: {
-    minHeight: '2.6rem',
-    padding: '0.7rem 0.95rem',
-    borderRadius: 'var(--radius-sm)',
+    minHeight: '2.4rem',
+    padding: '0.62rem 0.9rem',
+    borderRadius: '999px',
     border: '1px solid rgba(255, 173, 173, 0.28)',
     background: 'rgba(255, 173, 173, 0.1)',
     color: 'var(--ink)',

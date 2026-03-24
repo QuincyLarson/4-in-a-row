@@ -1,0 +1,62 @@
+.game-arena {
+  display: grid;
+  gap: 0.85rem;
+  --board-max-width: 100%;
+}
+
+.game-arena__header {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.game-arena__layout {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.game-arena__sidebar {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.game-arena__panel {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid rgba(245, 246, 247, 0.08);
+}
+
+.game-arena__buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 960px) {
+  .game-arena {
+    --board-max-width: clamp(22rem, 40vw, 33rem);
+  }
+
+  .game-arena__layout {
+    grid-template-columns: minmax(0, 1.08fr) minmax(17rem, 0.92fr);
+    align-items: start;
+  }
+
+  .game-arena__sidebar {
+    position: sticky;
+    top: 0.75rem;
+  }
+}
+
+@media (min-width: 1180px) {
+  .game-arena {
+    --board-max-width: clamp(23rem, 38vw, 35rem);
+  }
+
+  .game-arena__layout {
+    grid-template-columns: minmax(0, 1.12fr) minmax(18rem, 0.88fr);
+  }
+}

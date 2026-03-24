@@ -6,7 +6,7 @@
 .board-scene__frame {
   position: relative;
   width: 100%;
-  max-width: 48rem;
+  max-width: min(100%, var(--board-max-width, 48rem));
   aspect-ratio: 780 / 680;
   border-radius: var(--radius-lg);
   overflow: hidden;
