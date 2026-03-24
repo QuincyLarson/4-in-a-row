@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { curriculumLessons, curriculumWorlds } from '../../../content';
+import { nextLessonForSave } from '../../progression';
 import { useAppState } from '../../state/useAppState';
 import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
 
@@ -8,13 +10,12 @@ export function HomePage() {
   const {
     state: { save },
   } = useAppState();
+  const [now] = useState(() => Date.now());
 
   const completedLessons = save.progress.completedLessonIds.length;
   const bossWins = save.progress.bossWins.length;
-  const reviewDue = save.review.entries.length;
-  const completed = new Set(save.progress.completedLessonIds);
-  const nextLesson =
-    curriculumLessons.find((lesson) => !completed.has(lesson.id)) ?? curriculumLessons[0];
+  const reviewDue = save.review.entries.filter((entry) => new Date(entry.dueAt).getTime() <= now).length;
+  const nextLesson = nextLessonForSave(save) ?? curriculumLessons[0];
 
   return (
     <PageSection

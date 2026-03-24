@@ -3,14 +3,25 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { battleAis } from '../../../content';
 import { GameArena } from '../../../features/battle/GameArena';
+import { findReviewTarget, isAiUnlocked } from '../../progression';
+import { useAppState } from '../../state/useAppState';
 import { Card, PageSection } from './shared';
 
 export function PlayPage() {
+  const {
+    state: { save },
+    actions,
+  } = useAppState();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedId = searchParams.get('ai') ?? 'warmup-bot';
+  const playableAis = battleAis.filter((ai) => ai.role !== 'analysis');
+  const unlockedAis = playableAis.filter((ai) => isAiUnlocked(save, ai));
   const selected = useMemo(
-    () => battleAis.find((ai) => ai.id === selectedId) ?? battleAis[0],
-    [selectedId],
+    () =>
+      unlockedAis.find((ai) => ai.id === selectedId) ??
+      unlockedAis[0] ??
+      playableAis[0],
+    [playableAis, selectedId, unlockedAis],
   );
 
   return (
@@ -30,11 +41,10 @@ export function PlayPage() {
             }}
             style={play.select}
           >
-            {battleAis
-              .filter((ai) => ai.role !== 'analysis')
-              .map((ai) => (
-                <option key={ai.id} value={ai.id}>
+            {playableAis.map((ai) => (
+                <option key={ai.id} value={ai.id} disabled={!isAiUnlocked(save, ai)}>
                   {ai.name}
+                  {!isAiUnlocked(save, ai) ? ' (locked)' : ''}
                 </option>
               ))}
           </select>
@@ -49,6 +59,34 @@ export function PlayPage() {
         aiId={selected.id}
         title={`${selected.name} sparring`}
         description="Hover to preview a column, then confirm with click, tap, or keyboard."
+        onHumanResolvedMove={(_, analysis) => {
+          if (!analysis || !['inaccuracy', 'mistake', 'blunder'].includes(analysis.quality)) {
+            return;
+          }
+
+          const conceptTag = selected.reviewTags[0] ?? 'review';
+          const target = findReviewTarget({
+            puzzleId: `battle-${selected.id}-${conceptTag}`,
+            conceptTag,
+            dueAt: new Date().toISOString(),
+            attempts: 0,
+            correct: 0,
+            streak: 0,
+          });
+
+          if (!target) {
+            return;
+          }
+
+          actions.queueReview({
+            puzzleId: target.step.id,
+            conceptTag,
+            dueAt: new Date(Date.now() + 5 * 60_000).toISOString(),
+            attempts: 0,
+            correct: 0,
+            streak: 0,
+          });
+        }}
       />
     </PageSection>
   );

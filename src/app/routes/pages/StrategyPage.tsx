@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 
-import { strategyArticleBySlug } from '../../../content';
-import { Card, PageSection } from './shared';
+import { curriculumByLesson, strategyArticleBySlug } from '../../../content';
+import { Card, Chip, PageSection } from './shared';
 
 export function StrategyPage() {
   const { slug = '' } = useParams();
@@ -26,6 +26,13 @@ export function StrategyPage() {
       eyebrow="Strategy"
       title={article.title}
       body={article.description}
+      actions={
+        <>
+          {article.keywords.slice(0, 3).map((keyword) => (
+            <Chip key={keyword}>{keyword}</Chip>
+          ))}
+        </>
+      }
     >
       {article.sections.map((section) => (
         <Card key={section.title} title={section.title} body={section.body}>
@@ -38,6 +45,23 @@ export function StrategyPage() {
           ) : null}
         </Card>
       ))}
+
+      <Card
+        title="Related lessons"
+        body="Turn the article into board reps by jumping straight into the matching lesson set."
+        accent="var(--accent)"
+      >
+        <div style={strategy.links}>
+          {article.relatedLessonIds
+            .map((lessonId) => curriculumByLesson.get(lessonId))
+            .filter(Boolean)
+            .map((lesson) => (
+              <Link key={lesson!.id} to={`/lesson/${lesson!.id}`} style={strategy.link}>
+                {lesson!.title}
+              </Link>
+            ))}
+        </div>
+      </Card>
     </PageSection>
   );
 }
@@ -48,5 +72,14 @@ const strategy = {
     paddingLeft: '1rem',
     color: 'var(--muted)',
     lineHeight: 1.7,
+  },
+  links: {
+    display: 'grid',
+    gap: '0.65rem',
+  },
+  link: {
+    color: 'var(--accent)',
+    textDecoration: 'none',
+    fontWeight: 600,
   },
 };

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { battleAis } from '../../../content';
+import { isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
 import { Card, CardGrid, Chip, PageSection } from './shared';
 
@@ -18,6 +19,7 @@ export function BattlePage() {
       <CardGrid>
         {battleAis.map((ai) => {
           const beaten = save.progress.bossWins.includes(ai.id);
+          const unlocked = isAiUnlocked(save, ai);
           const tone =
             ai.role === 'analysis'
               ? 'var(--warning)'
@@ -34,8 +36,16 @@ export function BattlePage() {
               footer={
                 <>
                   <Chip>Level {ai.level}</Chip>
-                  <Chip tone={beaten ? 'success' : 'default'}>
-                    {beaten ? 'Cleared' : ai.role === 'analysis' ? 'Analysis' : 'Available'}
+                  <Chip tone={beaten ? 'success' : unlocked ? 'default' : 'warning'}>
+                    {beaten
+                      ? 'Cleared'
+                      : ai.role === 'analysis'
+                        ? unlocked
+                          ? 'Analysis'
+                          : 'Locked'
+                        : unlocked
+                          ? 'Available'
+                          : 'Locked'}
                   </Chip>
                   <Chip>{ai.tacticalBudgetMs}ms target</Chip>
                 </>
@@ -47,12 +57,24 @@ export function BattlePage() {
                 ))}
               </ul>
               {ai.role !== 'analysis' ? (
-                <Link to={`/play?ai=${ai.id}`} style={battle.link}>
-                  Start this matchup
+                <Link
+                  to={unlocked ? `/play?ai=${ai.id}` : '/learn'}
+                  style={{
+                    ...battle.link,
+                    opacity: unlocked ? 1 : 0.7,
+                  }}
+                >
+                  {unlocked ? 'Start this matchup' : 'Unlock in Learn'}
                 </Link>
               ) : (
-                <Link to="/sandbox" style={battle.link}>
-                  Open analysis sandbox
+                <Link
+                  to={unlocked ? '/sandbox' : '/learn'}
+                  style={{
+                    ...battle.link,
+                    opacity: unlocked ? 1 : 0.7,
+                  }}
+                >
+                  {unlocked ? 'Open analysis sandbox' : 'Reach Oracle to unlock'}
                 </Link>
               )}
             </Card>

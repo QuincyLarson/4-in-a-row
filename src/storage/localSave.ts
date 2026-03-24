@@ -1,22 +1,27 @@
 import { createDefaultSave, migrateSaveEnvelope } from './migrations';
 import type { SaveEnvelope } from './types';
 
-export const STORAGE_KEY = 'drop-four-academy.save';
+export const STORAGE_KEY = 'learn-drop-4.save';
+export const LEGACY_STORAGE_KEYS = ['drop-four-academy.save'] as const;
 
 export function loadSaveEnvelope(storage: Storage | undefined = globalThis.localStorage): SaveEnvelope {
   if (!storage) {
     return createDefaultSave();
   }
 
-  try {
-    const raw = storage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return createDefaultSave();
+  for (const key of [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]) {
+    try {
+      const raw = storage.getItem(key);
+      if (!raw) {
+        continue;
+      }
+      return migrateSaveEnvelope(JSON.parse(raw));
+    } catch {
+      continue;
     }
-    return migrateSaveEnvelope(JSON.parse(raw));
-  } catch {
-    return createDefaultSave();
   }
+
+  return createDefaultSave();
 }
 
 export function persistSaveEnvelope(

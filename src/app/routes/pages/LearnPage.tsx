@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { curriculumLessons, curriculumWorlds } from '../../../content';
+import { isWorldComplete, isWorldUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
 import { Card, CardGrid, Chip, PageSection } from './shared';
 
@@ -17,8 +18,8 @@ export function LearnPage() {
     >
       <CardGrid>
         {curriculumWorlds.map((world) => {
-          const unlocked =
-            world.id === 'world-0' || save.progress.worldUnlocks.includes(world.id);
+          const unlocked = isWorldUnlocked(save, world);
+          const cleared = isWorldComplete(save, world);
           const completedLessons = world.lessonIds.filter((lessonId) =>
             save.progress.completedLessonIds.includes(lessonId),
           ).length;
@@ -36,8 +37,8 @@ export function LearnPage() {
               accent={unlocked ? 'var(--accent)' : 'var(--surface-2)'}
               footer={
                 <>
-                  <Chip tone={unlocked ? 'success' : 'warning'}>
-                    {unlocked ? 'Unlocked' : 'Locked'}
+                  <Chip tone={cleared ? 'success' : unlocked ? 'default' : 'warning'}>
+                    {cleared ? 'Cleared' : unlocked ? 'Unlocked' : 'Locked'}
                   </Chip>
                   <Chip>{completedLessons}/{world.lessonIds.length} lessons</Chip>
                   <Chip>{starTotal} stars</Chip>

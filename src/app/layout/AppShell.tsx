@@ -15,22 +15,10 @@ export function AppShell() {
   const location = useLocation();
 
   useEffect(() => {
-    const titles: Record<string, string> = {
-      '/': 'Learn Drop 4',
-      '/learn': 'Learn - Learn Drop 4',
-      '/play': 'Play - Learn Drop 4',
-      '/battle': 'Battle - Learn Drop 4',
-      '/review': 'Review - Learn Drop 4',
-      '/profile': 'Profile - Learn Drop 4',
-      '/about': 'About - Learn Drop 4',
-      '/sandbox': 'Sandbox - Learn Drop 4',
-      '/credits': 'Credits - Learn Drop 4',
-    };
-    const title = titles[location.pathname] ?? 'Learn Drop 4';
+    const title = titleForPath(location.pathname);
     document.title = title;
 
-    const description =
-      'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, and review.';
+    const description = descriptionForPath(location.pathname);
     const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
     if (meta) {
       meta.setAttribute('content', description);
@@ -76,6 +64,80 @@ export function AppShell() {
       </main>
     </div>
   );
+}
+
+function titleForPath(pathname: string) {
+  if (pathname === '/') {
+    return 'Learn Drop 4';
+  }
+  if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
+    return 'Learn - Learn Drop 4';
+  }
+  if (pathname === '/play' || pathname === '/play/connect-4-online') {
+    return 'Play - Learn Drop 4';
+  }
+  if (pathname.startsWith('/lesson/')) {
+    return 'Lesson - Learn Drop 4';
+  }
+  if (pathname === '/battle') {
+    return 'Battle - Learn Drop 4';
+  }
+  if (pathname === '/review') {
+    return 'Review - Learn Drop 4';
+  }
+  if (pathname === '/profile') {
+    return 'Profile - Learn Drop 4';
+  }
+  if (pathname === '/about') {
+    return 'About - Learn Drop 4';
+  }
+  if (pathname.startsWith('/strategy/')) {
+    return 'Strategy - Learn Drop 4';
+  }
+  if (pathname === '/sandbox') {
+    return 'Sandbox - Learn Drop 4';
+  }
+  if (pathname === '/credits') {
+    return 'Credits - Learn Drop 4';
+  }
+  return 'Learn Drop 4';
+}
+
+function descriptionForPath(pathname: string) {
+  if (pathname === '/') {
+    return 'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, review, and a full client-side curriculum.';
+  }
+  if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
+    return 'Follow the Learn Drop 4 curriculum from first move to advanced practical play.';
+  }
+  if (pathname === '/play' || pathname === '/play/connect-4-online') {
+    return 'Play quick local matches against the Learn Drop 4 AI ladder.';
+  }
+  if (pathname.startsWith('/lesson/')) {
+    return 'Open a board-first lesson in Learn Drop 4 and work through the concept one move at a time.';
+  }
+  if (pathname === '/battle') {
+    return 'See the full Learn Drop 4 ladder, boss unlocks, and analysis path.';
+  }
+  if (pathname === '/review') {
+    return 'Use the Learn Drop 4 review queue to revisit mistakes until they stick.';
+  }
+  if (pathname === '/profile') {
+    return 'Adjust sound, motion, contrast, and local save settings in Learn Drop 4.';
+  }
+  if (pathname === '/about') {
+    return 'Learn how Learn Drop 4 works fully client-side with no accounts and no server.';
+  }
+  if (pathname.startsWith('/strategy/')) {
+    return 'Read practical Connect Four strategy guides and jump straight into the related Learn Drop 4 lessons.';
+  }
+  if (pathname === '/sandbox') {
+    return 'Test ideas on an open board with local analysis in Learn Drop 4.';
+  }
+  if (pathname === '/credits') {
+    return 'See the references and implementation notes behind Learn Drop 4.';
+  }
+  return 'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, and review.';
 }
 
 const shellStyles: Record<string, CSSProperties> = {

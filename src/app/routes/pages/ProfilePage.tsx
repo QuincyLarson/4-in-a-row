@@ -1,22 +1,28 @@
 import { useMemo, useState } from 'react';
 
+import { importSaveEnvelope } from '../../../storage/localSave';
 import { useAppState } from '../../state/useAppState';
 import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
 
 export function ProfilePage() {
   const { state, actions } = useAppState();
-  const [draftName, setDraftName] = useState(state.save.profile.displayName ?? '');
+  const [draftName, setDraftName] = useState('');
+  const [editingName, setEditingName] = useState(false);
   const [transferText, setTransferText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const [now] = useState(() => Date.now());
+  const nameValue = editingName ? draftName : (state.save.profile.displayName ?? '');
 
   const stats = useMemo(
     () => ({
       lessons: state.save.progress.completedLessonIds.length,
       bosses: state.save.progress.bossWins.length,
-      reviewDue: state.save.review.entries.length,
+      reviewDue: state.save.review.entries.filter(
+        (entry) => new Date(entry.dueAt).getTime() <= now,
+      ).length,
       games: state.save.history.recentGames.length,
     }),
-    [state.save],
+    [now, state.save],
   );
 
   return (
@@ -41,19 +47,23 @@ export function ProfilePage() {
           <p style={profile.copy}>Review due: {stats.reviewDue} items</p>
           <p style={profile.copy}>Created: {new Date(state.save.profile.createdAt).toLocaleDateString()}</p>
         </Card>
-        <Card title="Display Name" body="Purely local. Used only to personalize the profile and lesson copy.">
+      <Card title="Display Name" body="Purely local. Used only to personalize the profile and lesson copy.">
           <label style={profile.label}>
             Name
             <input
-              value={draftName}
-              onChange={(event) => setDraftName(event.target.value)}
+              value={nameValue}
+              onChange={(event) => {
+                setEditingName(true);
+                setDraftName(event.target.value);
+              }}
               style={profile.input}
             />
           </label>
           <InlineButton
             tone="accent"
             onClick={() => {
-              actions.setDisplayName(draftName);
+              actions.setDisplayName(nameValue);
+              setEditingName(false);
               setMessage('Display name updated.');
             }}
           >
@@ -88,6 +98,13 @@ export function ProfilePage() {
             />
             High contrast
           </label>
+        </Card>
+
+        <Card title="Sound cues" body="Short synth cues stay consistent so you can learn the board by ear as well as by sight.">
+          <p style={profile.copy}>High ping: your piece is released.</p>
+          <p style={profile.copy}>Low ping: the CPU releases a piece.</p>
+          <p style={profile.copy}>Thunk: a piece lands in the grid.</p>
+          <p style={profile.copy}>Win/loss chords: end-of-game feedback.</p>
         </Card>
 
         <Card title="Board Readability" body="Pattern mode makes the pieces distinguishable without relying on color alone.">
@@ -148,8 +165,10 @@ export function ProfilePage() {
             tone="accent"
             onClick={() => {
               try {
+                const imported = importSaveEnvelope(transferText);
                 actions.importSave(transferText);
-                setDraftName(state.save.profile.displayName ?? '');
+                setDraftName(imported.profile.displayName ?? '');
+                setEditingName(false);
                 setMessage('Save imported successfully.');
               } catch {
                 setMessage('Import failed. Check that the JSON is complete.');
@@ -164,6 +183,7 @@ export function ProfilePage() {
               actions.resetSave();
               setTransferText('');
               setDraftName('');
+              setEditingName(false);
               setMessage('Progress reset to a fresh local profile.');
             }}
           >

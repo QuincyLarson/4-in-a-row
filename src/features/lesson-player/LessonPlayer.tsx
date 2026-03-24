@@ -8,6 +8,7 @@ import {
   type LessonStep,
 } from '../../content';
 import { useAppState } from '../../app/state/useAppState';
+import { isWorldComplete } from '../../app/progression';
 import { BoardScene } from '../board/BoardScene';
 import { GameArena } from '../battle/GameArena';
 
@@ -68,7 +69,24 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     );
     actions.completeLesson(lesson.id, stars, conceptScores);
     lesson.unlocks?.forEach((unlock: string) => actions.unlockWorld(unlock));
-    world?.unlocks.forEach((unlock: string) => actions.unlockWorld(unlock));
+    if (world) {
+      const projectedSave = {
+        ...state.save,
+        progress: {
+          ...state.save.progress,
+          completedLessonIds: Array.from(
+            new Set([...state.save.progress.completedLessonIds, lesson.id]),
+          ),
+        },
+      };
+      if (
+        isWorldComplete(projectedSave, world) ||
+        (world.lessonIds.every((lessonId) => projectedSave.progress.completedLessonIds.includes(lessonId)) &&
+          (state.save.progress.bossWins.includes(world.bossAiId) || lesson.bossAiId === world.bossAiId))
+      ) {
+        world.unlocks.forEach((unlock: string) => actions.unlockWorld(unlock));
+      }
+    }
     setStepFeedback(`Lesson complete. ${stars} star${stars === 1 ? '' : 's'} earned.`);
   }
 
