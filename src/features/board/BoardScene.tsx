@@ -115,16 +115,6 @@ export function BoardScene({
               <stop offset="0%" stopColor="#f5f6f7" stopOpacity="0.16" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
-            <radialGradient id={`${defsId}-human`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#fff1b8" />
-              <stop offset="56%" stopColor="#f7d36a" />
-              <stop offset="100%" stopColor="#d99a00" />
-            </radialGradient>
-            <radialGradient id={`${defsId}-cpu`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="52%" stopColor="#b9dcff" />
-              <stop offset="100%" stopColor="#4e78ff" />
-            </radialGradient>
             <mask id={`${defsId}-holes`}>
               <rect width="100%" height="100%" fill="white" />
               {Array.from({ length: COLS * ROWS }, (_, index) => {
@@ -141,42 +131,21 @@ export function BoardScene({
                 );
               })}
             </mask>
+            <clipPath id={`${defsId}-chip-window`} clipPathUnits="userSpaceOnUse">
+              {Array.from({ length: COLS * ROWS }, (_, index) => {
+                const col = index % COLS;
+                const rowFromTop = Math.floor(index / COLS);
+                return (
+                  <circle
+                    key={`clip-${col}-${rowFromTop}`}
+                    cx={GRID.left + col * GRID.colGap}
+                    cy={GRID.top + rowFromTop * GRID.rowGap}
+                    r="34"
+                  />
+                );
+              })}
+            </clipPath>
           </defs>
-
-          {Array.from({ length: COLS }).map((_, col) =>
-            Array.from({ length: ROWS }).map((_, row) => {
-              const owner = cellOwner(board, col, row);
-              if (!owner) {
-                return null;
-              }
-              const isLatest =
-                lastMoveColumn === col &&
-                dropRow === row &&
-                board.moves.length > 0;
-
-              return (
-                <g
-                  key={`${col}-${row}-${owner}`}
-                  className={`board-chip${isLatest ? ' is-dropping' : ''}`}
-                  transform={`translate(${columnX(col)} ${columnY(row)})`}
-                  style={
-                    isLatest
-                      ? ({
-                          '--drop-offset': `${getDropOffsetPx(row)}px`,
-                          '--drop-duration': `${getDropDurationMs(row)}ms`,
-                        } as CSSProperties)
-                      : undefined
-                  }
-                >
-                  {owner === 'human' ? (
-                    <HumanChip defsId={defsId} />
-                  ) : (
-                    <CpuChip defsId={defsId} />
-                  )}
-                </g>
-              );
-            }),
-          )}
 
           <g>
             <rect
@@ -214,13 +183,6 @@ export function BoardScene({
                   <circle
                     cx={columnX(col)}
                     cy={columnY(rowFromBottom)}
-                    r="30"
-                    fill="#0a0a23"
-                    opacity="1"
-                  />
-                  <circle
-                    cx={columnX(col)}
-                    cy={columnY(rowFromBottom)}
                     r="34"
                     fill="none"
                     stroke="#f5f6f7"
@@ -229,6 +191,39 @@ export function BoardScene({
                   />
                 </g>
               )),
+            )}
+          </g>
+
+          <g clipPath={`url(#${defsId}-chip-window)`}>
+            {Array.from({ length: COLS }).map((_, col) =>
+              Array.from({ length: ROWS }).map((_, row) => {
+                const owner = cellOwner(board, col, row);
+                if (!owner) {
+                  return null;
+                }
+                const isLatest =
+                  lastMoveColumn === col &&
+                  dropRow === row &&
+                  board.moves.length > 0;
+
+                return (
+                  <g
+                    key={`${col}-${row}-${owner}`}
+                    className={`board-chip${isLatest ? ' is-dropping' : ''}`}
+                    transform={`translate(${columnX(col)} ${columnY(row)})`}
+                    style={
+                      isLatest
+                        ? ({
+                            '--drop-offset': `${getDropOffsetPx(row)}px`,
+                            '--drop-duration': `${getDropDurationMs(row)}ms`,
+                          } as CSSProperties)
+                        : undefined
+                    }
+                  >
+                    {owner === 'human' ? <HumanChip /> : <CpuChip />}
+                  </g>
+                );
+              }),
             )}
           </g>
 
@@ -261,11 +256,7 @@ export function BoardScene({
               transform={`translate(${columnX(previewColumn)} ${HOVER_CHIP_Y})`}
               opacity={disabled ? 0.62 : 1}
             >
-              {board.turn === 'human' ? (
-                <HumanChip defsId={defsId} preview />
-              ) : (
-                <CpuChip defsId={defsId} preview />
-              )}
+              {board.turn === 'human' ? <HumanChip preview /> : <CpuChip preview />}
               <path
                 d="M 0 42 V 58"
                 fill="none"
@@ -361,75 +352,77 @@ export function BoardScene({
   );
 }
 
-function HumanChip({ defsId, preview = false }: { defsId: string; preview?: boolean }) {
+function HumanChip({ preview = false }: { preview?: boolean }) {
   return (
     <>
-      <circle r={GRID.chipRadius} fill={`url(#${defsId}-human)`} />
+      <circle r={GRID.chipRadius} fill="#f1be32" />
       <circle
         r={GRID.chipRadius}
         fill="none"
-        stroke="#fff7d6"
-        strokeOpacity={preview ? '0.95' : '0.82'}
-        strokeWidth="3"
-      />
-      <circle
-        r="26"
-        fill="none"
-        stroke="#6b4b07"
-        strokeOpacity="0.9"
+        stroke="#fff4c2"
+        strokeOpacity={preview ? '1' : '0.92'}
         strokeWidth="2.5"
-      />
-      <circle r="21" fill="none" stroke="#0a0a23" strokeOpacity="0.38" strokeWidth="2.5" />
-      <path
-        d="M-16 10 L-1 -12"
-        stroke="#5c3f04"
-        strokeOpacity="var(--human-pattern-opacity, 0.82)"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M0 16 L15 -6"
-        stroke="#0a0a23"
-        strokeOpacity="0.9"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <circle cx="-10" cy="-11" r="5" fill="#fff7d6" fillOpacity="0.55" />
-    </>
-  );
-}
-
-function CpuChip({ defsId, preview = false }: { defsId: string; preview?: boolean }) {
-  return (
-    <>
-      <circle r={GRID.chipRadius} fill={`url(#${defsId}-cpu)`} />
-      <circle
-        r={GRID.chipRadius}
-        fill="none"
-        stroke="#f5fbff"
-        strokeOpacity={preview ? '0.98' : '0.9'}
-        strokeWidth="3"
       />
       <circle
         r="24"
         fill="none"
-        stroke="#0d2454"
-        strokeOpacity="0.82"
+        stroke="#0a0a23"
+        strokeOpacity="0.22"
+        strokeWidth="2"
+      />
+      <path
+        d="M-16 10 L-1 -12"
+        stroke="#7b5600"
+        strokeOpacity="var(--human-pattern-opacity, 0.96)"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M0 16 L15 -6"
+        stroke="#7b5600"
+        strokeOpacity="0.96"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+      />
+    </>
+  );
+}
+
+function CpuChip({ preview = false }: { preview?: boolean }) {
+  return (
+    <>
+      <circle r={GRID.chipRadius} fill="#99c9ff" />
+      <circle
+        r={GRID.chipRadius}
+        fill="none"
+        stroke="#edf7ff"
+        strokeOpacity={preview ? '1' : '0.94'}
         strokeWidth="2.5"
       />
       <circle
-        r="20.5"
+        r="24"
         fill="none"
-        stroke="#f5fbff"
-        strokeOpacity="var(--cpu-pattern-opacity, 0.84)"
-        strokeWidth="2.5"
+        stroke="#2f5ea8"
+        strokeOpacity="0.24"
+        strokeWidth="2"
       />
-      <circle r="5.5" fill="#0d2454" fillOpacity="0.88" />
-      <circle cy="-14" r="3.5" fill="#0d2454" fillOpacity="0.72" />
-      <circle cx="-14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
-      <circle cx="14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
-      <circle cy="14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
-      <circle cx="-10" cy="-11" r="5" fill="#ffffff" fillOpacity="0.5" />
+      <path
+        d="M-14 0 H14"
+        fill="none"
+        stroke="#1b4da1"
+        strokeOpacity="var(--cpu-pattern-opacity, 0.96)"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M0 -14 V14"
+        fill="none"
+        stroke="#1b4da1"
+        strokeOpacity="var(--cpu-pattern-opacity, 0.96)"
+        strokeWidth="5.5"
+        strokeLinecap="round"
+      />
+      <circle r="5" fill="#edf7ff" fillOpacity="0.9" />
     </>
   );
 }
