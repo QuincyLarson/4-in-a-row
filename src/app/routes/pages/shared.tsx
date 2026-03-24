@@ -40,12 +40,12 @@ export function Card({
   footer?: ReactNode;
 }>) {
   return (
-    <article
+      <article
       style={{
         ...shared.card,
         borderColor: accent ? `${accent}44` : shared.card.borderColor,
         boxShadow: accent
-          ? `0 20px 50px color-mix(in srgb, ${accent} 18%, transparent)`
+          ? `0 20px 50px color-mix(in srgb, ${accent} 16%, transparent)`
           : shared.card.boxShadow,
       }}
     >
@@ -135,19 +135,19 @@ export function CardGrid({ children }: PropsWithChildren) {
 const shared: Record<string, CSSProperties> = {
   pageSection: {
     display: 'grid',
-    gap: '1.5rem',
+    gap: '1.25rem',
   },
   header: {
     display: 'grid',
-    gap: '0.7rem',
+    gap: '0.85rem',
   },
   headerText: {
     display: 'grid',
-    gap: '0.55rem',
+    gap: '0.5rem',
   },
   headerActions: {
     display: 'flex',
-    gap: '0.75rem',
+    gap: '0.7rem',
     flexWrap: 'wrap',
   },
   eyebrow: {
@@ -158,36 +158,36 @@ const shared: Record<string, CSSProperties> = {
   },
   title: {
     margin: 0,
-    fontSize: 'clamp(1.45rem, 2vw + 1rem, 2.2rem)',
-    lineHeight: 1.02,
+    fontSize: 'clamp(1.55rem, 2vw + 1rem, 2.45rem)',
+    lineHeight: 1.04,
   },
   body: {
     margin: 0,
     color: 'var(--muted)',
     lineHeight: 1.7,
-    maxWidth: '52rem',
+    maxWidth: '48rem',
   },
   grid: {
     display: 'grid',
     gridTemplateColumns: '1fr',
-    gap: '1rem',
+    gap: '0.95rem',
   },
   card: {
     display: 'grid',
-    gap: '0.9rem',
-    padding: '1rem',
-    borderRadius: 'var(--radius-md)',
+    gap: '0.85rem',
+    padding: '1.1rem',
+    borderRadius: 'var(--radius-lg)',
     background: 'var(--surface)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
-    boxShadow: 'none',
+    boxShadow: '0 16px 36px rgba(0, 0, 0, 0.18)',
   },
   cardHeader: {
     display: 'grid',
-    gap: '0.55rem',
+    gap: '0.45rem',
   },
   cardTitle: {
     margin: 0,
-    fontSize: '1.15rem',
+    fontSize: '1.05rem',
   },
   cardBody: {
     margin: 0,
@@ -202,8 +202,8 @@ const shared: Record<string, CSSProperties> = {
   chip: {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '0.35rem 0.65rem',
-    borderRadius: 'var(--radius-sm)',
+    padding: '0.4rem 0.75rem',
+    borderRadius: '999px',
     fontSize: '0.86rem',
     border: '1px solid rgba(245, 246, 247, 0.08)',
   },
@@ -211,11 +211,12 @@ const shared: Record<string, CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '2.5rem',
-    padding: '0.7rem 1rem',
-    borderRadius: 'var(--radius-sm)',
+    minHeight: '2.75rem',
+    padding: '0.75rem 1.05rem',
+    borderRadius: '999px',
     color: 'var(--ink)',
     border: '1px solid transparent',
+    fontWeight: 600,
   },
   list: {
     display: 'grid',

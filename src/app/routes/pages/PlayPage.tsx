@@ -17,7 +17,7 @@ export function PlayPage() {
     <PageSection
       eyebrow="Instant Play"
       title="Fast local play against the ladder."
-      body="The board responds immediately, the chips drop in SVG, and medium-plus tiers hand off search work to a worker-friendly AI path."
+      body="Learn Drop 4 keeps the board responsive, drops pieces in SVG, and hands harder tiers to a worker-backed AI path."
     >
       <Card title="Opponent" body={selected.summary} accent="var(--cpu-0)">
         <label style={play.label}>

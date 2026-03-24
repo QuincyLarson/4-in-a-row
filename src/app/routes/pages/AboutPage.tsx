@@ -4,8 +4,8 @@ export function AboutPage() {
   return (
     <PageSection
       eyebrow="About"
-      title="A static-first Four in a Row trainer."
-      body="Drop Four Academy runs fully client-side: gameplay, lessons, AI, review, audio, settings, and persistence. No accounts, no cloud sync, no analytics, and no external APIs."
+      title="A static-first Learn Drop 4 trainer."
+      body="Learn Drop 4 runs fully client-side: gameplay, lessons, AI, review, audio, settings, and persistence. No accounts, no cloud sync, no analytics, and no external APIs."
     >
       <CardGrid>
         <Card title="Why it exists" body="Most public experiences separate play, puzzles, and strategy notes. This app tries to fuse them into one structured journey." />
