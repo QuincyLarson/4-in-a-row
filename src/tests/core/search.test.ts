@@ -50,7 +50,12 @@ describe('battle AI', () => {
     const board = boardFromMoves([3, 3, 2, 4, 2, 4]);
 
     for (const profile of AI_PROFILES) {
-      const result = chooseBattleMove(board, profile, { resetTranspositionTable: true });
+      const result = chooseBattleMove(board, profile, {
+        resetTranspositionTable: true,
+        // This test only checks legality, so force the fast fallback/budget path
+        // instead of waiting for deep tiers to complete a full search on CI runners.
+        deadlineMs: Date.now(),
+      });
       if (result.column !== null) {
         expect(legalMoves(board)).toContain(result.column);
       }
