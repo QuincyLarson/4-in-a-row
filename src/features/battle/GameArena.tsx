@@ -77,8 +77,10 @@ function GameArenaSession({
     Boolean(aiId && baseBoard.turn === 'cpu' && boardOutcome(baseBoard) === 'playing'),
   );
   const [analysis, setAnalysis] = useState<MoveAnalysis | null>(null);
+  const [previewVisible, setPreviewVisible] = useState(true);
   const finishedRef = useRef(false);
   const soundTimeoutsRef = useRef<number[]>([]);
+  const previewTimeoutRef = useRef<number | null>(null);
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
@@ -100,6 +102,7 @@ function GameArenaSession({
   useEffect(() => {
     return () => {
       clearQueuedSounds(soundTimeoutsRef);
+      clearPreviewLock(previewTimeoutRef);
     };
   }, []);
 
@@ -153,6 +156,7 @@ function GameArenaSession({
             landingRow,
             save.settings.reducedMotion,
           );
+          lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
           if (save.settings.soundEnabled) {
             void sfx.cpuMove();
             queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
@@ -186,7 +190,7 @@ function GameArenaSession({
   ]);
 
   async function playHumanMove(column: number) {
-    if (thinking || board.turn !== 'human' || !legalMoves(board).includes(column)) {
+    if (!previewVisible || thinking || board.turn !== 'human' || !legalMoves(board).includes(column)) {
       return;
     }
 
@@ -196,6 +200,7 @@ function GameArenaSession({
       landingRow,
       save.settings.reducedMotion,
     );
+    lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
     cpuReadyAtRef.current = Date.now() + landingDelay + 28;
     const nextBoard = applyMove(board, column);
     setBoard(nextBoard);
@@ -226,7 +231,7 @@ function GameArenaSession({
   }
 
   function playManualOtherSide(column: number) {
-    if (thinking || board.turn !== 'cpu' || !legalMoves(board).includes(column)) {
+    if (!previewVisible || thinking || board.turn !== 'cpu' || !legalMoves(board).includes(column)) {
       return;
     }
     const landingRow = getDropRow(board, column) ?? 0;
@@ -234,6 +239,7 @@ function GameArenaSession({
       landingRow,
       save.settings.reducedMotion,
     );
+    lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
     const nextBoard = applyMove(board, column);
     setBoard(nextBoard);
     setHintColumn(null);
@@ -265,8 +271,10 @@ function GameArenaSession({
 
   function resetBoard() {
     clearQueuedSounds(soundTimeoutsRef);
+    clearPreviewLock(previewTimeoutRef);
     cpuReadyAtRef.current = 0;
     setBoard(baseBoard);
+    setPreviewVisible(true);
     setPreviewColumn(nearestPlayable(baseBoard, 3));
     setHintColumn(null);
     setAnalysis(null);
@@ -279,6 +287,7 @@ function GameArenaSession({
       return;
     }
     clearQueuedSounds(soundTimeoutsRef);
+    clearPreviewLock(previewTimeoutRef);
     cpuReadyAtRef.current = 0;
     const trim = aiId ? 2 : 1;
     const nextMoves = board.moves.slice(
@@ -288,6 +297,7 @@ function GameArenaSession({
     const reconstructed =
       nextMoves.length === 0 ? createBoard('human') : boardFromZeroBasedMoves(nextMoves);
     setBoard(reconstructed);
+    setPreviewVisible(true);
     setPreviewColumn(nearestPlayable(reconstructed, activePreview ?? 3));
     setAnalysis(null);
     setThinking(
@@ -326,6 +336,9 @@ function GameArenaSession({
         <BoardScene
           board={board}
           previewColumn={hintColumn ?? activePreview}
+          showPreview={
+            previewVisible && (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
+          }
           onHoverColumn={(column) => {
             if (column !== null) {
               setPreviewColumn(column);
@@ -354,7 +367,7 @@ function GameArenaSession({
           onUndo={undoMove}
           onToggleMute={() => actions.setSound(!save.settings.soundEnabled)}
           status={statusText(board, thinking, result, aiMeta?.name, sandboxMode)}
-          disabled={thinking || (board.turn === 'cpu' && !!aiId)}
+          disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId)}
           winningLine={winningLine}
           showConfetti={result === 'win'}
         />
@@ -450,6 +463,26 @@ function queueSound(
 function clearQueuedSounds(timeoutsRef: MutableRefObject<number[]>) {
   timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
   timeoutsRef.current = [];
+}
+
+function lockPreview(
+  timeoutRef: MutableRefObject<number | null>,
+  setPreviewVisible: (value: boolean) => void,
+  delayMs: number,
+) {
+  clearPreviewLock(timeoutRef);
+  setPreviewVisible(false);
+  timeoutRef.current = window.setTimeout(() => {
+    timeoutRef.current = null;
+    setPreviewVisible(true);
+  }, delayMs);
+}
+
+function clearPreviewLock(timeoutRef: MutableRefObject<number | null>) {
+  if (timeoutRef.current !== null) {
+    window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
 }
 
 function statusText(

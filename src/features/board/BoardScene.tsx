@@ -32,6 +32,7 @@ const HOVER_CHIP_Y = 46;
 type BoardSceneProps = {
   board: BoardState;
   previewColumn: number | null;
+  showPreview?: boolean;
   onHoverColumn?: (column: number | null) => void;
   onSelectColumn?: (column: number) => void;
   onMovePreview?: (direction: -1 | 1) => void;
@@ -50,6 +51,7 @@ type BoardSceneProps = {
 export function BoardScene({
   board,
   previewColumn,
+  showPreview = true,
   onHoverColumn,
   onSelectColumn,
   onMovePreview,
@@ -81,6 +83,9 @@ export function BoardScene({
         aria-label={status}
         tabIndex={0}
         onKeyDown={(event) => {
+          if (disabled) {
+            return;
+          }
           if (event.key === 'ArrowLeft') {
             event.preventDefault();
             onMovePreview?.(-1);
@@ -194,6 +199,31 @@ export function BoardScene({
             )}
           </g>
 
+          {showPreview && previewColumn !== null && legal.has(previewColumn) ? (
+            <g className="board-preview">
+              <rect
+                x={columnX(previewColumn) - 50}
+                y="20"
+                width="100"
+                height="640"
+                rx="28"
+                fill={board.turn === 'human' ? '#f1be32' : '#99c9ff'}
+                fillOpacity="0.16"
+              />
+              <rect
+                x={columnX(previewColumn) - 50}
+                y="20"
+                width="100"
+                height="640"
+                rx="28"
+                fill="none"
+                stroke="#f5f6f7"
+                strokeOpacity="0.16"
+                strokeWidth="2"
+              />
+            </g>
+          ) : null}
+
           <g clipPath={`url(#${defsId}-chip-window)`}>
             {Array.from({ length: COLS }).map((_, col) =>
               Array.from({ length: ROWS }).map((_, row) => {
@@ -227,7 +257,7 @@ export function BoardScene({
             )}
           </g>
 
-          {previewColumn !== null && legal.has(previewColumn) && previewRow !== null ? (
+          {showPreview && previewColumn !== null && legal.has(previewColumn) && previewRow !== null ? (
             <g
               className="board-preview board-preview--landing"
               transform={`translate(${columnX(previewColumn)} ${columnY(previewRow)})`}
@@ -240,17 +270,13 @@ export function BoardScene({
                 stroke={board.turn === 'human' ? '#f1be32' : '#99c9ff'}
                 strokeOpacity="0.92"
                 strokeWidth="4"
-                strokeDasharray="6 6"
               />
-              <circle
-                r="8"
-                fill={board.turn === 'human' ? '#f1be32' : '#99c9ff'}
-                fillOpacity="0.8"
-              />
+              {landingReticleDots(board.turn === 'human' ? '#f1be32' : '#99c9ff')}
+              <circle r="8" fill={board.turn === 'human' ? '#f1be32' : '#99c9ff'} fillOpacity="0.8" />
             </g>
           ) : null}
 
-          {previewColumn !== null && legal.has(previewColumn) ? (
+          {showPreview && previewColumn !== null && legal.has(previewColumn) ? (
             <g
               className="board-preview board-preview--hover"
               transform={`translate(${columnX(previewColumn)} ${HOVER_CHIP_Y})`}
@@ -371,14 +397,14 @@ function HumanChip({ preview = false }: { preview?: boolean }) {
         strokeWidth="2"
       />
       <path
-        d="M-16 10 L-1 -12"
+        d="M-14 -14 L14 14"
         stroke="#7b5600"
         strokeOpacity="var(--human-pattern-opacity, 0.96)"
         strokeWidth="5.5"
         strokeLinecap="round"
       />
       <path
-        d="M0 16 L15 -6"
+        d="M14 -14 L-14 14"
         stroke="#7b5600"
         strokeOpacity="0.96"
         strokeWidth="5.5"
@@ -440,6 +466,23 @@ function pieceMove(x: number, y: number) {
     '--x': `${x}px`,
     '--y': `${y}px`,
   } as CSSProperties;
+}
+
+function landingReticleDots(color: string) {
+  return Array.from({ length: 14 }, (_, index) => {
+    const angle = (-90 + index * (360 / 14)) * (Math.PI / 180);
+    const radius = 30;
+    return (
+      <circle
+        key={`reticle-dot-${index}`}
+        cx={Math.cos(angle) * radius}
+        cy={Math.sin(angle) * radius}
+        r="2.5"
+        fill={color}
+        fillOpacity="0.92"
+      />
+    );
+  });
 }
 
 function lastOccupiedRow(board: BoardState, column: number) {

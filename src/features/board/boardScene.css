@@ -32,7 +32,10 @@
 
 .board-scene__hitboxes {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 5.128205%;
+  bottom: 0;
+  left: 5.128205%;
   z-index: 2;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -51,7 +54,7 @@
 }
 
 .board-scene__column.is-active {
-  background: linear-gradient(180deg, rgba(241, 190, 50, 0.18), transparent 44%);
+  background: transparent;
 }
 
 .board-chip {
