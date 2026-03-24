@@ -154,8 +154,11 @@ describe('GameArena', () => {
     expect(screen.getByRole('complementary', { name: 'Match tools' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Controls' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Coach' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show hint' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset board' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Drop (Enter)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hint (H)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset (R)' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Show hint' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next: ' })).not.toBeInTheDocument();
   });
 
   it('shows the cpu reply as a visible dropping chip before the next human turn', async () => {

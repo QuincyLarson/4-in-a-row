@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import {
   applyMove,
@@ -14,9 +13,8 @@ import {
   type MoveAnalysis,
 } from '../../core';
 import { useAppState } from '../../app/state/useAppState';
-import { isAiUnlocked } from '../../app/progression';
 import { getSfxController } from '../../audio/sfx';
-import { battleAiById, battleAis } from '../../content';
+import { battleAiById } from '../../content';
 import { BoardScene } from '../board/BoardScene';
 import { getDropDurationMs, getImpactDelayMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
@@ -61,7 +59,6 @@ function GameArenaSession({
   onHumanResolvedMove,
   onFinish,
 }: GameArenaProps) {
-  const navigate = useNavigate();
   const {
     state: { save },
     actions,
@@ -105,12 +102,7 @@ function GameArenaSession({
   const status = statusText(board, thinking, result, aiMeta?.name, sandboxMode);
   const outcomeLabel =
     result === 'win' ? 'You win!' : result === 'loss' ? 'Try again!' : result === 'draw' ? 'Draw!' : null;
-  const nextAi = aiId ? nextLadderAi(aiId) : null;
-  const canAdvance =
-    result === 'win' &&
-    mode !== 'lesson' &&
-    nextAi !== null &&
-    isAiUnlocked(save, nextAi);
+  const canDrop = Boolean(activePreview !== null && previewVisible && !thinking);
 
   useEffect(() => {
     return () => {
@@ -340,6 +332,17 @@ function GameArenaSession({
     resetBoard();
   }
 
+  function dropPreview() {
+    if (activePreview === null) {
+      return;
+    }
+    if (board.turn === 'human') {
+      void playHumanMove(activePreview);
+    } else if (sandboxMode) {
+      playManualOtherSide(activePreview);
+    }
+  }
+
   return (
     <div className="game-arena">
       <div className="game-arena__masthead">
@@ -403,72 +406,54 @@ function GameArenaSession({
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
               <h3 className="game-arena__panelTitle">Controls</h3>
-              <span className="game-arena__microPill">Keys live</span>
             </div>
             <div className="game-arena__buttonGrid">
               <button
                 type="button"
                 className="game-arena__button"
-                disabled={!canUndo}
-                onClick={undoMove}
+                disabled={!canDrop}
+                onClick={dropPreview}
               >
-                Undo
+                Drop (Enter)
               </button>
               <button
                 type="button"
                 className="game-arena__button"
-                onClick={() => actions.setSound(!save.settings.soundEnabled)}
+                onClick={requestHint}
               >
-                {save.settings.soundEnabled ? 'Mute' : 'Sound on'}
+                Hint (H)
               </button>
               <button
                 type="button"
                 className="game-arena__button game-arena__button--danger"
                 onClick={confirmResetBoard}
               >
-                Reset board
+                Reset (R)
               </button>
-            </div>
-            <div className="game-arena__shortcutGrid" aria-label="Keyboard shortcuts">
-              <span className="game-arena__shortcut">
-                <span>Preview</span>
-                <kbd className="game-arena__key">← →</kbd>
-              </span>
-              <span className="game-arena__shortcut">
-                <span>Drop</span>
-                <kbd className="game-arena__key">Enter</kbd>
-              </span>
-              <span className="game-arena__shortcut">
-                <span>Hint</span>
-                <kbd className="game-arena__key">H</kbd>
-              </span>
-              <span className="game-arena__shortcut">
-                <span>Undo</span>
-                <kbd className="game-arena__key">U</kbd>
-              </span>
-              <span className="game-arena__shortcut">
-                <span>Reset</span>
-                <kbd className="game-arena__key">R</kbd>
-              </span>
-              <span className="game-arena__shortcut">
-                <span>Sound</span>
-                <kbd className="game-arena__key">M</kbd>
-              </span>
+              <button
+                type="button"
+                className="game-arena__button"
+                disabled={!canUndo}
+                onClick={undoMove}
+              >
+                Undo (U)
+              </button>
+              <button
+                type="button"
+                className="game-arena__button"
+                onClick={() => actions.setSound(!save.settings.soundEnabled)}
+              >
+                Sound (M)
+              </button>
             </div>
           </section>
 
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
-              <h3 className="game-arena__panelTitle">Coach</h3>
-              {hintColumn !== null ? (
-                <span className="game-arena__microPill game-arena__microPill--accent">
-                  Hint: {hintColumn + 1}
-                </span>
-              ) : analysis ? (
-                <span className="game-arena__microPill game-arena__microPill--accent">
-                  {analysis.quality}
-                </span>
+              {analysis ? (
+                <span className="game-arena__coachQuality">{analysis.quality}</span>
               ) : null}
+              <h3 className="game-arena__panelTitle">Coach</h3>
             </div>
             <div className="game-arena__analysis">
               <p className="game-arena__bodyCopy">
@@ -479,26 +464,6 @@ function GameArenaSession({
               ) : null}
               {hintColumn !== null ? (
                 <p className="game-arena__bodyCopy">Try column {hintColumn + 1} next.</p>
-              ) : null}
-            </div>
-            <div className="game-arena__buttonGrid">
-              <button type="button" className="game-arena__button" onClick={requestHint}>
-                Show hint
-              </button>
-              {canAdvance && nextAi ? (
-                <button
-                  type="button"
-                  className="game-arena__button"
-                  onClick={() => {
-                    if (nextAi.role === 'analysis') {
-                      navigate('/sandbox');
-                    } else {
-                      navigate(`/play?ai=${nextAi.id}`);
-                    }
-                  }}
-                >
-                  {nextAi.role === 'analysis' ? 'Open Oracle' : `Next: ${nextAi.name}`}
-                </button>
               ) : null}
             </div>
           </section>
@@ -614,9 +579,4 @@ function coachCopy(
     return analysis.reason;
   }
   return 'Hint when needed. Otherwise just play.';
-}
-
-function nextLadderAi(currentAiId: string) {
-  const currentIndex = battleAis.findIndex((ai) => ai.id === currentAiId);
-  return currentIndex >= 0 ? battleAis[currentIndex + 1] ?? null : null;
 }
