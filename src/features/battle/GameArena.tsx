@@ -18,7 +18,7 @@ import { isAiUnlocked } from '../../app/progression';
 import { getSfxController } from '../../audio/sfx';
 import { battleAiById, battleAis } from '../../content';
 import { BoardScene } from '../board/BoardScene';
-import { getDropDurationMs } from '../board/motion';
+import { getDropDurationMs, getImpactDelayMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
 import './gameArena.css';
 
@@ -169,10 +169,14 @@ function GameArenaSession({
             landingRow,
             save.settings.reducedMotion,
           );
+          const impactDelay = getImpactDelayMs(
+            landingRow,
+            save.settings.reducedMotion,
+          );
           lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
           if (save.settings.soundEnabled) {
             void sfx.cpuMove();
-            queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
+            queueSound(soundTimeoutsRef, () => void sfx.land(), impactDelay);
           }
           cpuReadyAtRef.current = 0;
           const next = applyMove(board, column);
@@ -213,6 +217,10 @@ function GameArenaSession({
       landingRow,
       save.settings.reducedMotion,
     );
+    const impactDelay = getImpactDelayMs(
+      landingRow,
+      save.settings.reducedMotion,
+    );
     lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
     cpuReadyAtRef.current = Date.now() + landingDelay + 28;
     const nextBoard = applyMove(board, column);
@@ -225,7 +233,7 @@ function GameArenaSession({
 
     if (save.settings.soundEnabled) {
       void sfx.humanMove();
-      queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
+      queueSound(soundTimeoutsRef, () => void sfx.land(), impactDelay);
     }
 
     if (!aiId) {
@@ -252,6 +260,10 @@ function GameArenaSession({
       landingRow,
       save.settings.reducedMotion,
     );
+    const impactDelay = getImpactDelayMs(
+      landingRow,
+      save.settings.reducedMotion,
+    );
     lockPreview(previewTimeoutRef, setPreviewVisible, landingDelay);
     const nextBoard = applyMove(board, column);
     setBoard(nextBoard);
@@ -259,7 +271,7 @@ function GameArenaSession({
     setPreviewColumn(nearestPlayable(nextBoard, column));
     if (save.settings.soundEnabled) {
       void sfx.cpuMove();
-      queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
+      queueSound(soundTimeoutsRef, () => void sfx.land(), impactDelay);
     }
   }
 

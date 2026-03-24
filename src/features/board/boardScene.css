@@ -75,7 +75,7 @@
   transform-box: fill-box;
   transform-origin: center;
   transform: translateY(var(--drop-start, -220px));
-  animation: board-chip-drop var(--drop-duration, 420ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: board-chip-drop var(--drop-duration, 420ms) cubic-bezier(0.2, 0.9, 0.28, 1) forwards;
 }
 
 .board-impact {
@@ -178,35 +178,53 @@ body[data-motion='reduced'] .board-confetti rect {
 @keyframes board-chip-drop {
   0% {
     opacity: 1;
-    transform: translateY(var(--drop-start, -220px));
+    transform: translateY(var(--drop-start, -220px)) scale(1);
   }
 
-  74% {
+  90% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(var(--drop-overshoot, 8px)) scale(1.04, 0.95);
   }
 
-  88% {
+  96% {
     opacity: 1;
-    transform: translateY(var(--drop-bounce, 8px));
+    transform: translateY(calc(var(--drop-rebound, 4px) * -1)) scale(0.99, 1.01);
   }
 
   100% {
     opacity: 0;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes board-chip-settle {
   0%,
-  72% {
+  90% {
     opacity: 0;
   }
 
-  90%,
+  97% {
+    opacity: 0.58;
+  }
+
   100% {
     opacity: 1;
   }
+}
+
+@keyframes board-chip-settle-reduced {
+  0%,
+  82% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+body[data-motion='reduced'] .board-chip--latest-hole {
+  animation-name: board-chip-settle-reduced;
 }
 
 @keyframes board-impact-ring {

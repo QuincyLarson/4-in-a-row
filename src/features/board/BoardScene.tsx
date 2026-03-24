@@ -12,7 +12,9 @@ import {
 } from '../../core';
 import {
   getDropDurationMs,
+  getDropOvershootPx,
   getDropOffsetPx,
+  getDropReboundPx,
   getImpactDelayMs,
 } from './motion';
 import './boardScene.css';
@@ -478,10 +480,10 @@ function DroppingChipMotion({
     ? Math.min(120, getDropOffsetPx(row))
     : getDropOffsetPx(row);
   const durationMs = getDropDurationMs(row, reducedMotion);
-  const bouncePx = reducedMotion ? 0 : Math.max(5, 12 - row);
   const motionStyle = {
     '--drop-start': `${-dropOffset}px`,
-    '--drop-bounce': `${bouncePx}px`,
+    '--drop-overshoot': `${getDropOvershootPx(row, reducedMotion)}px`,
+    '--drop-rebound': `${getDropReboundPx(row, reducedMotion)}px`,
     '--drop-duration': `${durationMs}ms`,
   } as CSSProperties;
 
