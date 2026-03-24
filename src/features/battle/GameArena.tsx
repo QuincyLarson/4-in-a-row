@@ -99,6 +99,14 @@ function GameArenaSession({
     board.winner !== null ? winningLinesFor(board, board.winner)[0] ?? null : null;
   const canUndo = board.moves.length > baseBoard.moves.length;
   const sandboxMode = mode === 'sandbox' && !aiId;
+  const status = statusText(board, thinking, result, aiMeta?.name, sandboxMode);
+  const turnLabel = sandboxMode
+    ? board.turn === 'human'
+      ? 'Human side to move'
+      : 'CPU side to move'
+    : board.turn === 'human'
+      ? 'Your turn'
+      : `${aiMeta?.name ?? 'CPU'} turn`;
 
   useEffect(() => {
     return () => {
@@ -318,102 +326,164 @@ function GameArenaSession({
 
   return (
     <div className="game-arena">
-      <div className="game-arena__header">
-        <div>
-          <h2 style={arena.title}>{title}</h2>
-          <p style={arena.description}>{description}</p>
+      <div className="game-arena__masthead">
+        <div className="game-arena__copy">
+          <h2 className="game-arena__title">{title}</h2>
+          <p className="game-arena__description">{description}</p>
         </div>
-        <div style={arena.pills}>
-          {aiMeta ? <span style={arena.pill}>{aiMeta.name}</span> : null}
+        <div className="game-arena__meta">
+          {aiMeta ? <span className="game-arena__pill">{aiMeta.name}</span> : null}
           {hintColumn !== null ? (
-            <span style={{ ...arena.pill, color: 'var(--warning)' }}>
+            <span className="game-arena__pill game-arena__pill--warning">
               Hint: column {hintColumn + 1}
             </span>
           ) : null}
+          <span className="game-arena__pill">{turnLabel}</span>
         </div>
       </div>
 
-      <div className="game-arena__layout">
-        <BoardScene
-          board={board}
-          previewColumn={hintColumn ?? activePreview}
-          reducedMotion={save.settings.reducedMotion}
-          showPreview={
-            previewVisible && (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
-          }
-          onHoverColumn={(column) => {
-            if (column !== null) {
-              setPreviewColumn(column);
-            }
-          }}
-          onSelectColumn={(column) => {
-            if (board.turn === 'human') {
-              void playHumanMove(column);
-            } else if (sandboxMode) {
-              playManualOtherSide(column);
-            }
-          }}
-          onMovePreview={cyclePreview}
-          onPrimaryAction={() => {
-            if (activePreview === null) {
-              return;
-            }
-            if (board.turn === 'human') {
-              void playHumanMove(activePreview);
-            } else if (sandboxMode) {
-              playManualOtherSide(activePreview);
-            }
-          }}
-          onHint={requestHint}
-          onRestart={confirmResetBoard}
-          onUndo={undoMove}
-          onToggleMute={() => actions.setSound(!save.settings.soundEnabled)}
-          status={statusText(board, thinking, result, aiMeta?.name, sandboxMode)}
-          disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId)}
-          winningLine={winningLine}
-          showConfetti={result === 'win'}
-        />
+      <div className="game-arena__shell">
+        <div className="game-arena__boardColumn">
+          <div className="game-arena__boardWrap">
+            <BoardScene
+              board={board}
+              previewColumn={hintColumn ?? activePreview}
+              reducedMotion={save.settings.reducedMotion}
+              showPreview={
+                previewVisible && (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
+              }
+              onHoverColumn={(column) => {
+                if (column !== null) {
+                  setPreviewColumn(column);
+                }
+              }}
+              onSelectColumn={(column) => {
+                if (board.turn === 'human') {
+                  void playHumanMove(column);
+                } else if (sandboxMode) {
+                  playManualOtherSide(column);
+                }
+              }}
+              onMovePreview={cyclePreview}
+              onPrimaryAction={() => {
+                if (activePreview === null) {
+                  return;
+                }
+                if (board.turn === 'human') {
+                  void playHumanMove(activePreview);
+                } else if (sandboxMode) {
+                  playManualOtherSide(activePreview);
+                }
+              }}
+              onHint={requestHint}
+              onRestart={confirmResetBoard}
+              onUndo={undoMove}
+              onToggleMute={() => actions.setSound(!save.settings.soundEnabled)}
+              status={status}
+              disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId)}
+              winningLine={winningLine}
+              showConfetti={result === 'win'}
+            />
+          </div>
+        </div>
 
-        <aside className="game-arena__sidebar">
-          <div className="game-arena__panel">
-            <h3 style={arena.panelTitle}>Controls</h3>
-            <ul style={arena.list}>
-              <li>Arrow keys move the preview chip.</li>
-              <li>Enter or Space drops the chip.</li>
-              <li>H for hint, R for reset, U for undo, M for mute.</li>
-            </ul>
-            <div className="game-arena__buttons">
-              <button type="button" style={arena.button} onClick={requestHint}>
+        <aside className="game-arena__rail" aria-label="Match tools">
+          <section className="game-arena__panel">
+            <div className="game-arena__panelHeader">
+              <h3 className="game-arena__panelTitle">Match</h3>
+              <span className="game-arena__microPill">
+                {thinking ? 'Thinking' : result ? result.toUpperCase() : 'Live'}
+              </span>
+            </div>
+            <p className="game-arena__bodyCopy">{status}</p>
+            <div className="game-arena__metaRow">
+              <span className="game-arena__microPill">{board.moves.length} plies</span>
+              <span className="game-arena__microPill">
+                {save.settings.soundEnabled ? 'Sound on' : 'Sound off'}
+              </span>
+            </div>
+          </section>
+
+          <section className="game-arena__panel">
+            <div className="game-arena__panelHeader">
+              <h3 className="game-arena__panelTitle">Controls</h3>
+              <span className="game-arena__microPill">Always in view</span>
+            </div>
+            <div className="game-arena__buttonGrid">
+              <button type="button" className="game-arena__button" onClick={requestHint}>
                 Hint
               </button>
               <button
                 type="button"
-                style={arena.button}
+                className="game-arena__button"
                 disabled={!canUndo}
                 onClick={undoMove}
               >
                 Undo
               </button>
-              <button type="button" style={arena.buttonDanger} onClick={confirmResetBoard}>
+              <button
+                type="button"
+                className="game-arena__button"
+                onClick={() => actions.setSound(!save.settings.soundEnabled)}
+              >
+                {save.settings.soundEnabled ? 'Mute' : 'Sound on'}
+              </button>
+              <button
+                type="button"
+                className="game-arena__button game-arena__button--danger"
+                onClick={confirmResetBoard}
+              >
                 Reset board
               </button>
             </div>
-          </div>
+            <div className="game-arena__shortcutGrid" aria-label="Keyboard shortcuts">
+              <span className="game-arena__shortcut">
+                <span>Preview</span>
+                <kbd className="game-arena__key">← →</kbd>
+              </span>
+              <span className="game-arena__shortcut">
+                <span>Drop</span>
+                <kbd className="game-arena__key">Enter</kbd>
+              </span>
+              <span className="game-arena__shortcut">
+                <span>Hint</span>
+                <kbd className="game-arena__key">H</kbd>
+              </span>
+              <span className="game-arena__shortcut">
+                <span>Undo</span>
+                <kbd className="game-arena__key">U</kbd>
+              </span>
+              <span className="game-arena__shortcut">
+                <span>Reset</span>
+                <kbd className="game-arena__key">R</kbd>
+              </span>
+              <span className="game-arena__shortcut">
+                <span>Sound</span>
+                <kbd className="game-arena__key">M</kbd>
+              </span>
+            </div>
+          </section>
 
-          <div className="game-arena__panel">
-            <h3 style={arena.panelTitle}>Coach</h3>
+          <section className="game-arena__panel">
+            <div className="game-arena__panelHeader">
+              <h3 className="game-arena__panelTitle">Coach</h3>
+              {analysis ? (
+                <span className="game-arena__microPill game-arena__microPill--accent">
+                  {analysis.quality}
+                </span>
+              ) : null}
+            </div>
             {analysis ? (
-              <div style={arena.analysis}>
-                <strong style={arena.analysisLabel}>{analysis.quality}</strong>
-                <p style={arena.analysisBody}>{analysis.reason}</p>
+              <div className="game-arena__analysis">
+                <p className="game-arena__bodyCopy">{analysis.reason}</p>
                 {analysis.bestMove !== null ? (
-                  <p style={arena.analysisBody}>
+                  <p className="game-arena__bodyCopy">
                     Better move: column {analysis.bestMove + 1}
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p style={arena.analysisBody}>
+              <p className="game-arena__bodyCopy">
                 {result
                   ? result === 'win'
                     ? 'Clean finish. Replay or climb to a tougher opponent.'
@@ -425,7 +495,7 @@ function GameArenaSession({
                     : 'The coach labels stronger alternatives after your moves.'}
               </p>
             )}
-          </div>
+          </section>
         </aside>
       </div>
     </div>
@@ -515,79 +585,3 @@ function statusText(
     ? 'Your move. Hover, tap, or use the keyboard preview.'
     : `${aiName ?? 'CPU'} to move.`;
 }
-
-const arena = {
-  frame: {
-    display: 'grid',
-    gap: '1.25rem',
-  },
-  header: {
-    display: 'grid',
-    gap: '0.55rem',
-  },
-  title: {
-    margin: 0,
-    fontSize: '1.05rem',
-  },
-  description: {
-    margin: '0.25rem 0 0',
-    color: 'var(--muted)',
-    lineHeight: 1.5,
-  },
-  pills: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '0.5rem',
-  },
-  pill: {
-    display: 'inline-flex',
-    padding: '0.3rem 0.65rem',
-    borderRadius: '999px',
-    background: 'rgba(127, 219, 255, 0.08)',
-    color: 'var(--accent-2)',
-  },
-  panelTitle: {
-    margin: 0,
-    fontSize: '0.98rem',
-  },
-  list: {
-    margin: 0,
-    paddingLeft: '1rem',
-    color: 'var(--muted)',
-    lineHeight: 1.55,
-  },
-  analysis: {
-    display: 'grid',
-    gap: '0.4rem',
-  },
-  analysisLabel: {
-    textTransform: 'capitalize' as const,
-    color: 'var(--accent)',
-  },
-  analysisBody: {
-    margin: 0,
-    color: 'var(--muted)',
-    lineHeight: 1.55,
-  },
-  buttons: {
-    display: 'flex',
-    gap: '0.5rem',
-    flexWrap: 'wrap' as const,
-  },
-  button: {
-    minHeight: '2.4rem',
-    padding: '0.62rem 0.9rem',
-    borderRadius: '999px',
-    border: '1px solid rgba(245, 246, 247, 0.12)',
-    background: 'var(--bg-1)',
-    color: 'var(--ink)',
-  },
-  buttonDanger: {
-    minHeight: '2.4rem',
-    padding: '0.62rem 0.9rem',
-    borderRadius: '999px',
-    border: '1px solid rgba(255, 173, 173, 0.28)',
-    background: 'rgba(255, 173, 173, 0.1)',
-    color: 'var(--ink)',
-  },
-};

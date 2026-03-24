@@ -101,6 +101,20 @@ describe('GameArena', () => {
     expect(container.querySelector('.board-preview--hover')).not.toBeNull();
   });
 
+  it('keeps the control rail rendered with match tools and coach content', () => {
+    render(
+      <AppStateProvider>
+        <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+      </AppStateProvider>,
+    );
+
+    expect(screen.getByRole('complementary', { name: 'Match tools' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Controls' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Coach' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Hint' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset board' })).toBeInTheDocument();
+  });
+
   it('shows the cpu reply as a visible dropping chip before the next human turn', async () => {
     const { container } = render(
       <AppStateProvider>

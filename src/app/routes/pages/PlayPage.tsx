@@ -5,7 +5,7 @@ import { battleAis } from '../../../content';
 import { GameArena } from '../../../features/battle/GameArena';
 import { findReviewTarget, isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, PageSection } from './shared';
+import { PageSection } from './shared';
 
 export function PlayPage() {
   const {
@@ -28,37 +28,42 @@ export function PlayPage() {
     <PageSection
       eyebrow="Instant Play"
       title="Fast local play against the ladder."
-      body="Learn Drop 4 keeps the board responsive, drops pieces in SVG, and hands harder tiers to a worker-backed AI path."
-    >
-      <Card title="Opponent" body={selected.summary} accent="var(--cpu-0)">
-        <label style={play.label}>
-          Choose AI
-          <select
-            value={selected.id}
-            onChange={(event) => {
-              searchParams.set('ai', event.target.value);
-              setSearchParams(searchParams);
-            }}
-            style={play.select}
-          >
-            {playableAis.map((ai) => (
+      body="Choose an opponent and keep the board, coach, and controls on one screen."
+      actions={
+        <div style={play.toolbar}>
+          <label style={play.label}>
+            Choose AI
+            <select
+              value={selected.id}
+              onChange={(event) => {
+                searchParams.set('ai', event.target.value);
+                setSearchParams(searchParams);
+              }}
+              style={play.select}
+            >
+              {playableAis.map((ai) => (
                 <option key={ai.id} value={ai.id} disabled={!isAiUnlocked(save, ai)}>
                   {ai.name}
                   {!isAiUnlocked(save, ai) ? ' (locked)' : ''}
                 </option>
               ))}
-          </select>
-        </label>
-        <p style={play.copy}>Strengths: {selected.strengths.join(', ')}.</p>
-        <Link to="/battle" style={play.link}>
-          Open the full ladder
-        </Link>
-      </Card>
-
+            </select>
+          </label>
+          <div style={play.toolbarFooter}>
+            <span style={play.summary}>
+              {selected.name}: {selected.summary}
+            </span>
+            <Link to="/battle" style={play.link}>
+              Full ladder
+            </Link>
+          </div>
+        </div>
+      }
+    >
       <GameArena
         aiId={selected.id}
         title={`${selected.name} sparring`}
-        description="Hover to preview a column, then confirm with click, tap, or keyboard."
+        description={`Strengths: ${selected.strengths.join(', ')}.`}
         onHumanResolvedMove={(_, analysis) => {
           if (!analysis || !['inaccuracy', 'mistake', 'blunder'].includes(analysis.quality)) {
             return;
@@ -95,26 +100,44 @@ export function PlayPage() {
 const play = {
   label: {
     display: 'grid',
-    gap: '0.5rem',
+    gap: '0.45rem',
     color: 'var(--muted)',
+    fontSize: '0.84rem',
+    letterSpacing: '0.03em',
+    textTransform: 'uppercase' as const,
+  },
+  toolbar: {
+    display: 'grid',
+    gap: '0.7rem',
+    padding: '0.9rem',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
+    background: 'var(--surface)',
+    minWidth: 'min(100%, 22rem)',
   },
   select: {
-    minHeight: '2.8rem',
-    padding: '0.75rem 0.95rem',
-    borderRadius: '0.95rem',
+    minHeight: '2.7rem',
+    padding: '0.7rem 0.9rem',
+    borderRadius: '0.85rem',
     background: 'rgba(255, 255, 255, 0.04)',
     border: '1px solid rgba(127, 219, 255, 0.14)',
     color: 'var(--ink)',
+    fontSize: '0.98rem',
   },
-  copy: {
-    margin: 0,
+  toolbarFooter: {
+    display: 'grid',
+    gap: '0.45rem',
+  },
+  summary: {
     color: 'var(--muted)',
-    lineHeight: 1.7,
+    fontSize: '0.9rem',
+    lineHeight: 1.45,
   },
   link: {
     color: 'var(--accent)',
     textDecoration: 'underline',
     textUnderlineOffset: '0.18em',
     fontWeight: 600,
+    fontSize: '0.92rem',
   },
 };
