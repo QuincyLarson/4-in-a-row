@@ -77,6 +77,10 @@ export function BoardScene({
     lastMoveColumn !== null && dropRow !== null
       ? cellOwner(board, lastMoveColumn, dropRow)
       : null;
+  const latestMoveKey =
+    lastMoveColumn !== null && dropRow !== null && latestOwner
+      ? `${board.moves.length}-${lastMoveColumn}-${dropRow}-${latestOwner}`
+      : 'no-latest-move';
   const previewRow =
     previewColumn !== null ? getDropRow(board, previewColumn) : null;
   const legal = new Set(legalMoves(board));
@@ -266,6 +270,7 @@ export function BoardScene({
 
           {lastMoveColumn !== null && dropRow !== null && latestOwner ? (
             <g
+              key={`drop-${latestMoveKey}`}
               className="board-chip board-chip--drop-overlay"
               data-owner={latestOwner}
               transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
@@ -337,6 +342,7 @@ export function BoardScene({
 
           {lastMoveColumn !== null && dropRow !== null ? (
             <g
+              key={`impact-${latestMoveKey}`}
               className="board-impact"
               transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
             >
