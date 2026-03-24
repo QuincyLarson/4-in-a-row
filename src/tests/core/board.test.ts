@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vitest';
 import {
   applyMove,
   boardFromHumanMoves,
+  boardFromMoves,
   bitForCell,
   boardToColumns,
   boardToRows,
+  cellForBit,
   createBoard,
   firstWinningLine,
+  getDropRow,
+  IllegalMoveError,
   isWinBitboard,
   legalMoves,
   moveHistoryKey,
@@ -60,6 +64,9 @@ describe('board notation and legal moves', () => {
     }
     expect(legalMoves(board)).not.toContain(0);
     expect(bitCount(board.human | board.cpu)).toBe(6);
+    expect(getDropRow(board, 0)).toBeNull();
+    expect(getDropRow(board, -1)).toBeNull();
+    expect(getDropRow(board, 7)).toBeNull();
   });
 });
 
@@ -83,5 +90,28 @@ describe('board helpers', () => {
     expect(board.moves).toEqual([3, 3, 2]);
     expect(board.turn).toBe('cpu');
     expect(boardOutcome(board)).toBe('playing');
+  });
+
+  it('round-trips playable cells to and from bit positions', () => {
+    expect(cellForBit(0n)).toBeNull();
+    expect(cellForBit(1n << 48n)).toBeNull();
+
+    for (let col = 0; col < 7; col += 1) {
+      for (let row = 0; row < 6; row += 1) {
+        expect(cellForBit(bitForCell(col, row))).toEqual({ col, row });
+      }
+    }
+  });
+
+  it('throws on illegal moves in full or terminal positions', () => {
+    let fullColumnBoard = createBoard();
+    for (let index = 0; index < 6; index += 1) {
+      fullColumnBoard = applyMove(fullColumnBoard, 0);
+    }
+    expect(() => applyMove(fullColumnBoard, 0)).toThrow(IllegalMoveError);
+
+    const winningBoard = boardFromMoves([0, 1, 0, 1, 0, 1, 0]);
+    expect(winningBoard.winner).toBe('human');
+    expect(() => applyMove(winningBoard, 2)).toThrow('Cannot move in a finished game.');
   });
 });
