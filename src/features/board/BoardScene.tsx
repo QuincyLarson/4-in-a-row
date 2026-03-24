@@ -396,28 +396,31 @@ export function BoardScene({
           ) : null}
 
           {outcomeLabel ? (
-            <g className="board-outcome" transform="translate(390 338)">
-              <rect
-                x="-132"
-                y="-36"
-                width="264"
-                height="72"
-                rx="22"
-                fill="#0a0a23"
-                fillOpacity="0.84"
-                stroke="#f5f6f7"
-                strokeOpacity="0.16"
-              />
-              <text
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="#f5f6f7"
-                fontSize="28"
-                fontWeight="700"
-                letterSpacing="0.04em"
-              >
-                {outcomeLabel}
-              </text>
+            <g transform="translate(390 338)">
+              <g className="board-outcome">
+                <rect
+                  x="-146"
+                  y="-42"
+                  width="292"
+                  height="84"
+                  rx="24"
+                  fill="#0a0a23"
+                  fillOpacity="0.92"
+                  stroke="#f5f6f7"
+                  strokeOpacity="0.26"
+                  strokeWidth="2"
+                />
+                <text
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#ffffff"
+                  fontSize="32"
+                  fontWeight="700"
+                  letterSpacing="0.04em"
+                >
+                  {outcomeLabel}
+                </text>
+              </g>
             </g>
           ) : null}
 

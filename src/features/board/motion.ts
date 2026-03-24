@@ -1,8 +1,8 @@
 import { ROWS } from '../../core';
 
 export function getDropDurationMs(rowFromBottom: number, reducedMotion = false) {
-  const duration = 260 + (ROWS - rowFromBottom) * 34;
-  return reducedMotion ? Math.max(120, Math.round(duration * 0.45)) : duration;
+  const duration = 380 + (ROWS - rowFromBottom) * 48;
+  return reducedMotion ? Math.max(160, Math.round(duration * 0.5)) : duration;
 }
 
 export function getDropOffsetPx(rowFromBottom: number) {

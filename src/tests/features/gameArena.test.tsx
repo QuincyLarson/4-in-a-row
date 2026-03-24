@@ -137,7 +137,7 @@ describe('GameArena', () => {
     expect(container.querySelectorAll('.board-chip')).toHaveLength(2);
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(820);
     });
     expect(container.querySelector('.board-preview--hover')).not.toBeNull();
   });
@@ -172,7 +172,7 @@ describe('GameArena', () => {
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(520);
+      await vi.advanceTimersByTimeAsync(920);
     });
 
     expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
