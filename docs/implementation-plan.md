@@ -1,4 +1,4 @@
-# Drop Four Academy Implementation Plan
+# Learn Drop 4 Implementation Plan
 
 ## Goal
 Build a polished static React/TypeScript learning app that teaches and drills Four in a Row strategy fully client-side, with deterministic board logic, worker-backed AI, SVG-first presentation, Web Audio API SFX, and localStorage persistence.

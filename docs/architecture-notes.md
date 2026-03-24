@@ -1,7 +1,7 @@
 # Architecture Notes
 
 ## Overview
-Drop Four Academy is a static Vite + React + TypeScript app deployed with `HashRouter` and a relative Vite `base`, so the same build works locally and on GitHub Pages without a server fallback.
+Learn Drop 4 is a static Vite + React + TypeScript app deployed with `HashRouter` and a relative Vite `base`, so the same build works locally and on GitHub Pages without a server fallback.
 
 ## Core runtime layers
 - `src/core/**`: pure bigint bitboard engine, notation helpers, opening book, evaluation, search, and coach analysis.
@@ -27,6 +27,7 @@ Drop Four Academy is a static Vite + React + TypeScript app deployed with `HashR
 - The app uses React context plus reducer-backed actions instead of a separate store library.
 - A single versioned save envelope keeps settings, progress, review entries, and recent games together.
 - Import/export is plain JSON; migrations sanitize partial or stale envelopes.
+- Progression stays world-gated, battle opponents unlock off curriculum milestones, and the review queue can replay authored drills directly.
 
 ## Rendering and feel
 - Main play uses inline SVG, not canvas.
@@ -38,3 +39,7 @@ Drop Four Academy is a static Vite + React + TypeScript app deployed with `HashR
 - `src/tests/core/board.test.ts`: parsing, move legality, win detection, and board helpers.
 - `src/tests/core/search.test.ts`: tactical prechecks, opening-book hits, legal AI moves, and deterministic random simulations.
 - `src/tests/core/coach.test.ts`: move-quality classification sanity.
+- `src/tests/storage/localSave.test.ts`: save import/export, legacy key fallback, and migration safety.
+- `src/tests/features/aiClient.test.ts`: worker timeout/error fallback and request matching.
+- `src/tests/app/progression.test.ts`: world unlocks, battle gates, and review scheduling helpers.
+- `src/tests/app/routes.test.tsx`: route-level regressions for metadata, review flow, profile hydration, and gated UI.

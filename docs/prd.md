@@ -1,4 +1,4 @@
-# PRD — Drop Four Academy
+# PRD — Learn Drop 4
 **Version:** v1.0  
 **Date:** 2026-03-23  
 **Type:** Product Requirements Document  
@@ -37,7 +37,7 @@ The app must feel responsive and game-like:
   - **higher pitch when the human moves**
   - **lower pitch when the CPU moves**
 
-The public brand should avoid using the trademarked game name as the product name. Use a generic public name such as **Drop Four Academy** or **Four in a Row Academy**. “Connect 4” should only appear in editorial/SEO copy where legally appropriate.
+The public brand should avoid using the trademarked game name as the product name. Use a generic public name such as **Learn Drop 4** or **Four in a Row Academy**. “Connect 4” should only appear in editorial/SEO copy where legally appropriate.
 
 ---
 
@@ -1407,7 +1407,7 @@ Do **not** start by authoring all content before the feel is right.
 
 ### Public-facing brand
 Recommended:
-- **Drop Four Academy**
+- **Learn Drop 4**
 - **Four in a Row Academy**
 - **Drop Four Trainer**
 - **Row Forge**
@@ -1611,4 +1611,3 @@ Reduced motion version:
 
 6. John Tromp’s Connect Four pages  
    Key relevance: historical solution context, strong-solve work, and compact engine/bitboard implementation ideas.
-

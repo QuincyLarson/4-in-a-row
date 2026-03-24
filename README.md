@@ -1,6 +1,6 @@
-# Drop Four Academy
+# Learn Drop 4
 
-Drop Four Academy is a fully client-side Connect 4 learning site built with Vite, React, and TypeScript. It ships a typed curriculum, AI ladder, SVG board rendering, Web Audio API synth SFX, local-only persistence, and a GitHub Pages deployment workflow.
+Learn Drop 4 is a fully client-side Connect 4 learning site built with Vite, React, and TypeScript. It ships a typed curriculum, AI ladder, SVG board rendering, Web Audio API synth SFX, local-only persistence, and a GitHub Pages deployment workflow.
 
 ## Stack
 - Vite
@@ -23,6 +23,7 @@ The app uses a relative Vite `base` and `HashRouter`, so local and GitHub Pages 
 ```bash
 npm run lint
 npm test
+npm run test:coverage
 npm run build
 npm run check
 ```
@@ -54,7 +55,7 @@ SEO-friendly aliases from the PRD also resolve:
 - `src/core/**` contains the pure bigint board engine, evaluation, search, and coach analysis.
 - `src/workers/ai.worker.ts` runs higher-tier search and analysis off the main thread.
 - `src/content/**` holds authored worlds, lessons, battle ladder metadata, and strategy copy.
-- `src/storage/**` provides the versioned save envelope, migrations, and import/export helpers.
+- `src/storage/**` provides the versioned save envelope, migrations, legacy save-key fallback, and import/export helpers.
 - `src/features/**` contains the SVG board, lesson runner, battle arena, and route-facing UI.
 
 More detail lives in [`docs/architecture-notes.md`](/Users/m/Documents/code/4-in-a-row/docs/architecture-notes.md).
@@ -64,4 +65,4 @@ More detail lives in [`docs/architecture-notes.md`](/Users/m/Documents/code/4-in
 - Main board visuals are inline SVG only.
 - Sound effects are synthesised with the Web Audio API only.
 - Progress persists in localStorage with a versioned envelope and migration path.
-- The board supports hover preview, keyboard input, reduced motion, pattern mode, high contrast, mute, import/export, and undo in sandbox.
+- The board supports hover preview, keyboard input, reduced motion, pattern mode, high contrast, mute, import/export, undo in sandbox, and a playable review queue.
