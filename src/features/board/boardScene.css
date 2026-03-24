@@ -6,10 +6,12 @@
 .board-scene__frame {
   position: relative;
   width: 100%;
-  max-width: 52rem;
+  max-width: 48rem;
   aspect-ratio: 780 / 680;
-  border-radius: 2rem;
+  border-radius: var(--radius-lg);
   overflow: hidden;
+  border: 1px solid rgba(245, 246, 247, 0.08);
+  box-shadow: var(--shadow);
 }
 
 .board-scene__frame::before {
@@ -17,8 +19,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at top, rgba(127, 219, 255, 0.14), transparent 36%),
-    linear-gradient(180deg, rgba(12, 24, 42, 0.92), rgba(6, 16, 27, 0.98));
+    radial-gradient(circle at top, rgba(241, 190, 50, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(27, 27, 50, 0.96), rgba(10, 10, 35, 1));
 }
 
 .board-scene__svg {
@@ -49,7 +51,7 @@
 }
 
 .board-scene__column.is-active {
-  background: linear-gradient(180deg, rgba(113, 247, 213, 0.08), transparent 40%);
+  background: linear-gradient(180deg, rgba(241, 190, 50, 0.12), transparent 40%);
 }
 
 .board-chip {

@@ -12,18 +12,15 @@ body,
 }
 
 html {
-  background:
-    radial-gradient(circle at top, rgba(127, 219, 255, 0.2), transparent 28%),
-    radial-gradient(circle at bottom left, rgba(113, 247, 213, 0.12), transparent 24%),
-    linear-gradient(180deg, var(--bg-2), var(--bg-0));
+  background: linear-gradient(180deg, var(--bg-1), var(--bg-0));
 }
 
 body {
   margin: 0;
   color: var(--ink);
+  font-family: var(--font-body);
   background:
-    radial-gradient(circle at 20% 0%, rgba(247, 95, 112, 0.14), transparent 24%),
-    radial-gradient(circle at 90% 15%, rgba(113, 247, 213, 0.09), transparent 26%),
+    radial-gradient(circle at top, rgba(241, 190, 50, 0.08), transparent 20%),
     linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
 }
 
@@ -33,14 +30,23 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 3.5rem 3.5rem;
-  mask-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), transparent 90%);
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 2.75rem 2.75rem;
+  mask-image: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 100%);
 }
 
 a {
   color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+button,
+nav a {
+  font-family: var(--font-display);
 }
 
 button,
@@ -66,9 +72,9 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
   box-shadow:
-    0 0 0 2px rgba(6, 16, 27, 0.9),
+    0 0 0 2px rgba(10, 10, 35, 0.95),
     0 0 0 4px var(--focus);
-  border-radius: 0.75rem;
+  border-radius: var(--radius-sm);
 }
 
 img,

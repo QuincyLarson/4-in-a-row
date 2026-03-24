@@ -308,7 +308,7 @@ const lessonStyles = {
   grid: {
     display: 'grid',
     gap: '1rem',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))',
+    gridTemplateColumns: '1fr',
   },
   main: {
     display: 'grid',
@@ -316,9 +316,9 @@ const lessonStyles = {
   },
   staticBoard: {
     padding: '1rem',
-    borderRadius: '1.2rem',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(127, 219, 255, 0.12)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
   },
   sidebar: {
     display: 'grid',
@@ -329,10 +329,9 @@ const lessonStyles = {
     display: 'grid',
     gap: '0.85rem',
     padding: '1rem',
-    borderRadius: '1.2rem',
-    background:
-      'linear-gradient(180deg, rgba(19, 34, 56, 0.9), rgba(12, 23, 40, 0.96))',
-    border: '1px solid rgba(120, 231, 255, 0.18)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
   },
   panelTitle: {
     margin: 0,
@@ -368,18 +367,17 @@ const lessonStyles = {
   button: {
     minHeight: '2.6rem',
     padding: '0.7rem 1rem',
-    borderRadius: '0.9rem',
-    border: '1px solid rgba(127, 219, 255, 0.14)',
-    background: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(245, 246, 247, 0.12)',
+    background: 'var(--bg-1)',
     color: 'var(--ink)',
   },
   buttonAccent: {
     minHeight: '2.6rem',
     padding: '0.7rem 1rem',
-    borderRadius: '0.9rem',
-    border: '1px solid rgba(127, 219, 255, 0.28)',
-    background:
-      'linear-gradient(135deg, rgba(127, 219, 255, 0.2), rgba(113, 247, 213, 0.14))',
-    color: 'var(--ink)',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(241, 190, 50, 0.9)',
+    background: 'var(--accent)',
+    color: '#0a0a23',
   },
 };

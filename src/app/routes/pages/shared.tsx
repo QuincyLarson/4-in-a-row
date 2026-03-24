@@ -65,15 +65,15 @@ export function Chip({
 }: PropsWithChildren<{ tone?: 'default' | 'success' | 'warning' | 'danger' }>) {
   const tones: Record<string, CSSProperties> = {
     default: {
-      background: 'rgba(127, 219, 255, 0.1)',
+      background: 'rgba(153, 201, 255, 0.12)',
       color: 'var(--accent-2)',
     },
     success: {
-      background: 'rgba(157, 255, 184, 0.12)',
+      background: 'rgba(172, 209, 87, 0.14)',
       color: 'var(--success)',
     },
     warning: {
-      background: 'rgba(255, 212, 107, 0.12)',
+      background: 'rgba(241, 190, 50, 0.14)',
       color: 'var(--warning)',
     },
     danger: {
@@ -97,16 +97,17 @@ export function InlineButton({
 }>) {
   const tones: Record<string, CSSProperties> = {
     default: {
-      background: 'rgba(255, 255, 255, 0.04)',
-      borderColor: 'rgba(127, 219, 255, 0.12)',
+      background: 'var(--surface)',
+      borderColor: 'rgba(245, 246, 247, 0.1)',
     },
     accent: {
-      background: 'linear-gradient(135deg, rgba(127, 219, 255, 0.22), rgba(113, 247, 213, 0.16))',
-      borderColor: 'rgba(127, 219, 255, 0.28)',
+      background: 'var(--accent)',
+      color: '#0a0a23',
+      borderColor: 'rgba(241, 190, 50, 0.9)',
     },
     danger: {
-      background: 'rgba(240, 141, 141, 0.12)',
-      borderColor: 'rgba(240, 141, 141, 0.24)',
+      background: 'rgba(255, 173, 173, 0.12)',
+      borderColor: 'rgba(255, 173, 173, 0.3)',
     },
   };
 
@@ -138,7 +139,7 @@ const shared: Record<string, CSSProperties> = {
   },
   header: {
     display: 'grid',
-    gap: '1rem',
+    gap: '0.7rem',
   },
   headerText: {
     display: 'grid',
@@ -151,13 +152,13 @@ const shared: Record<string, CSSProperties> = {
   },
   eyebrow: {
     fontSize: '0.8rem',
-    letterSpacing: '0.18em',
+    letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: 'var(--accent)',
+    color: 'var(--accent-2)',
   },
   title: {
     margin: 0,
-    fontSize: 'clamp(1.7rem, 2vw + 1rem, 2.8rem)',
+    fontSize: 'clamp(1.45rem, 2vw + 1rem, 2.2rem)',
     lineHeight: 1.02,
   },
   body: {
@@ -168,17 +169,17 @@ const shared: Record<string, CSSProperties> = {
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))',
+    gridTemplateColumns: '1fr',
     gap: '1rem',
   },
   card: {
     display: 'grid',
-    gap: '1rem',
-    padding: '1.15rem',
-    borderRadius: '1.2rem',
-    background: 'linear-gradient(180deg, rgba(15, 29, 48, 0.9), rgba(9, 19, 32, 0.8))',
-    border: '1px solid rgba(127, 219, 255, 0.12)',
-    boxShadow: '0 20px 50px rgba(1, 7, 17, 0.2)',
+    gap: '0.9rem',
+    padding: '1rem',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
+    boxShadow: 'none',
   },
   cardHeader: {
     display: 'grid',
@@ -202,8 +203,9 @@ const shared: Record<string, CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     padding: '0.35rem 0.65rem',
-    borderRadius: '999px',
+    borderRadius: 'var(--radius-sm)',
     fontSize: '0.86rem',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
   },
   button: {
     display: 'inline-flex',
@@ -211,7 +213,7 @@ const shared: Record<string, CSSProperties> = {
     justifyContent: 'center',
     minHeight: '2.5rem',
     padding: '0.7rem 1rem',
-    borderRadius: '0.9rem',
+    borderRadius: 'var(--radius-sm)',
     color: 'var(--ink)',
     border: '1px solid transparent',
   },

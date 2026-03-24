@@ -259,6 +259,15 @@ function GameArenaSession({
     finishedRef.current = false;
   }
 
+  function confirmResetBoard() {
+    if (
+      !window.confirm('Reset the current board? This clears the current position and move history.')
+    ) {
+      return;
+    }
+    resetBoard();
+  }
+
   return (
     <div style={arena.frame}>
       <div style={arena.header}>
@@ -304,7 +313,7 @@ function GameArenaSession({
             }
           }}
           onHint={requestHint}
-          onRestart={resetBoard}
+          onRestart={confirmResetBoard}
           onUndo={undoMove}
           onToggleMute={() => actions.setSound(!save.settings.soundEnabled)}
           status={statusText(board, thinking, result, aiMeta?.name, sandboxMode)}
@@ -319,8 +328,24 @@ function GameArenaSession({
             <ul style={arena.list}>
               <li>Arrow keys move the preview chip.</li>
               <li>Enter or Space drops the chip.</li>
-              <li>H for hint, R for restart, U for undo, M for mute.</li>
+              <li>H for hint, R for reset, U for undo, M for mute.</li>
             </ul>
+            <div style={arena.buttons}>
+              <button type="button" style={arena.button} onClick={requestHint}>
+                Hint
+              </button>
+              <button
+                type="button"
+                style={arena.button}
+                disabled={!canUndo}
+                onClick={undoMove}
+              >
+                Undo
+              </button>
+              <button type="button" style={arena.buttonDanger} onClick={confirmResetBoard}>
+                Reset board
+              </button>
+            </div>
           </div>
 
           <div style={arena.panel}>
@@ -409,11 +434,11 @@ const arena = {
   },
   header: {
     display: 'grid',
-    gap: '0.75rem',
+    gap: '0.55rem',
   },
   title: {
     margin: 0,
-    fontSize: '1.45rem',
+    fontSize: '1.2rem',
   },
   description: {
     margin: '0.4rem 0 0',
@@ -435,7 +460,7 @@ const arena = {
   grid: {
     display: 'grid',
     gap: '1rem',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))',
+    gridTemplateColumns: '1fr',
   },
   sidebar: {
     display: 'grid',
@@ -446,9 +471,9 @@ const arena = {
     display: 'grid',
     gap: '0.8rem',
     padding: '1rem',
-    borderRadius: '1.1rem',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(127, 219, 255, 0.12)',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--surface)',
+    border: '1px solid rgba(245, 246, 247, 0.08)',
   },
   panelTitle: {
     margin: 0,
@@ -472,5 +497,26 @@ const arena = {
     margin: 0,
     color: 'var(--muted)',
     lineHeight: 1.7,
+  },
+  buttons: {
+    display: 'flex',
+    gap: '0.65rem',
+    flexWrap: 'wrap' as const,
+  },
+  button: {
+    minHeight: '2.6rem',
+    padding: '0.7rem 0.95rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(245, 246, 247, 0.12)',
+    background: 'var(--bg-1)',
+    color: 'var(--ink)',
+  },
+  buttonDanger: {
+    minHeight: '2.6rem',
+    padding: '0.7rem 0.95rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1px solid rgba(255, 173, 173, 0.28)',
+    background: 'rgba(255, 173, 173, 0.1)',
+    color: 'var(--ink)',
   },
 };

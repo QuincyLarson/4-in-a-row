@@ -105,20 +105,20 @@ export function BoardScene({
         >
           <defs>
             <linearGradient id={`${defsId}-frame`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="#1f4a73" />
-              <stop offset="100%" stopColor="#16324f" />
+              <stop offset="0%" stopColor="#3b3b4f" />
+              <stop offset="100%" stopColor="#2a2a40" />
             </linearGradient>
             <linearGradient id={`${defsId}-shine`} x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+              <stop offset="0%" stopColor="#f5f6f7" stopOpacity="0.16" />
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
             <radialGradient id={`${defsId}-human`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#ff8a5b" />
-              <stop offset="100%" stopColor="#ff5d6c" />
+              <stop offset="0%" stopColor="#f7d36a" />
+              <stop offset="100%" stopColor="#f1be32" />
             </radialGradient>
             <radialGradient id={`${defsId}-cpu`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#8fa8ff" />
-              <stop offset="100%" stopColor="#5e6cff" />
+              <stop offset="0%" stopColor="#d5e9ff" />
+              <stop offset="100%" stopColor="#99c9ff" />
             </radialGradient>
             <mask id={`${defsId}-holes`}>
               <rect width="100%" height="100%" fill="white" />
@@ -147,14 +147,14 @@ export function BoardScene({
               <circle
                 r="30"
                 fill={`url(#${board.turn === 'human' ? `${defsId}-human` : `${defsId}-cpu`})`}
-                opacity="0.28"
+                opacity="0.4"
               />
-              <circle r="36" fill="none" stroke="#71f7d5" strokeWidth="4" />
+              <circle r="36" fill="none" stroke="#f1be32" strokeWidth="4" />
               <circle
                 r="27"
                 fill="none"
-                stroke="#ffffff"
-                strokeOpacity="0.42"
+                stroke="#f5f6f7"
+                strokeOpacity="0.72"
                 strokeWidth="2"
                 strokeDasharray="6 6"
               />
@@ -222,9 +222,9 @@ export function BoardScene({
               height="640"
               rx="44"
               fill="none"
-              stroke="#7FDBFF"
-              strokeOpacity="0.18"
-              strokeWidth="3"
+              stroke="#f5f6f7"
+              strokeOpacity="0.28"
+              strokeWidth="4"
             />
             {Array.from({ length: COLS }).map((_, col) =>
               Array.from({ length: ROWS }).map((_, rowFromBottom) => (
@@ -233,16 +233,17 @@ export function BoardScene({
                     cx={columnX(col)}
                     cy={columnY(rowFromBottom)}
                     r="30"
-                    fill="#09111c"
-                    opacity="0.92"
+                    fill="#0a0a23"
+                    opacity="1"
                   />
                   <circle
                     cx={columnX(col)}
                     cy={columnY(rowFromBottom)}
                     r="34"
                     fill="none"
-                    stroke="#ffffff"
-                    strokeOpacity="0.08"
+                    stroke="#f5f6f7"
+                    strokeOpacity="0.18"
+                    strokeWidth="2"
                   />
                 </g>
               )),
@@ -256,7 +257,7 @@ export function BoardScene({
               y1={columnY(winningLine.cells[0].row)}
               x2={columnX(winningLine.cells[winningLine.cells.length - 1].col)}
               y2={columnY(winningLine.cells[winningLine.cells.length - 1].row)}
-              stroke="#71f7d5"
+              stroke="#acd157"
               strokeWidth="10"
               strokeLinecap="round"
               strokeOpacity="0.78"
@@ -273,7 +274,7 @@ export function BoardScene({
               <circle
                 r="28"
                 fill="none"
-                stroke="#ffffff"
+                stroke="#f5f6f7"
                 strokeOpacity="0.6"
                 strokeWidth="2"
                 strokeDasharray="5 5"
@@ -322,18 +323,19 @@ function HumanChip({ defsId }: { defsId: string }) {
   return (
     <>
       <circle r={GRID.chipRadius} fill={`url(#${defsId}-human)`} />
-      <circle r="22" fill="none" stroke="#ffffff" strokeOpacity="0.2" strokeWidth="2" />
+      <circle r={GRID.chipRadius} fill="none" stroke="#f5f6f7" strokeOpacity="0.22" strokeWidth="2" />
+      <circle r="22" fill="none" stroke="#0a0a23" strokeOpacity="0.28" strokeWidth="2" />
       <path
         d="M-16 10 L-1 -12"
-        stroke="#ffffff"
+        stroke="#0a0a23"
         strokeOpacity="var(--human-pattern-opacity, 0.55)"
         strokeWidth="6"
         strokeLinecap="round"
       />
       <path
         d="M0 16 L15 -6"
-        stroke="#ffffff"
-        strokeOpacity="0.45"
+        stroke="#0a0a23"
+        strokeOpacity="0.72"
         strokeWidth="6"
         strokeLinecap="round"
       />
@@ -345,12 +347,13 @@ function CpuChip({ defsId }: { defsId: string }) {
   return (
     <>
       <circle r={GRID.chipRadius} fill={`url(#${defsId}-cpu)`} />
-      <circle r="21" fill="none" stroke="#ffffff" strokeOpacity="var(--cpu-pattern-opacity, 0.25)" strokeWidth="2" />
-      <circle r="5.5" fill="#ffffff" fillOpacity="0.55" />
-      <circle cy="-14" r="3.5" fill="#ffffff" fillOpacity="0.35" />
-      <circle cx="-14" r="3.2" fill="#ffffff" fillOpacity="0.25" />
-      <circle cx="14" r="3.2" fill="#ffffff" fillOpacity="0.25" />
-      <circle cy="14" r="3.2" fill="#ffffff" fillOpacity="0.25" />
+      <circle r={GRID.chipRadius} fill="none" stroke="#f5f6f7" strokeOpacity="0.2" strokeWidth="2" />
+      <circle r="21" fill="none" stroke="#0a0a23" strokeOpacity="var(--cpu-pattern-opacity, 0.25)" strokeWidth="2.5" />
+      <circle r="5.5" fill="#0a0a23" fillOpacity="0.68" />
+      <circle cy="-14" r="3.5" fill="#0a0a23" fillOpacity="0.5" />
+      <circle cx="-14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
+      <circle cx="14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
+      <circle cy="14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
     </>
   );
 }
