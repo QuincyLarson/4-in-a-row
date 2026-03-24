@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#10253D" />
+      <stop offset="100%" stop-color="#081019" />
+    </linearGradient>
+    <radialGradient id="human" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FF9C5A" />
+      <stop offset="100%" stop-color="#F75E70" />
+    </radialGradient>
+    <radialGradient id="cpu" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#9FB3FF" />
+      <stop offset="100%" stop-color="#6375FF" />
+    </radialGradient>
+  </defs>
+  <rect width="96" height="96" rx="24" fill="url(#bg)" />
+  <circle cx="34" cy="58" r="20" fill="url(#human)" />
+  <circle cx="62" cy="38" r="20" fill="url(#cpu)" />
+  <path
+    d="M25 64 L34 51 M34 69 L43 56"
+    stroke="#fff"
+    stroke-opacity="0.55"
+    stroke-linecap="round"
+    stroke-width="4"
+  />
+  <circle cx="62" cy="38" r="9" fill="none" stroke="#fff" stroke-opacity="0.28" stroke-width="2" />
+  <circle cx="62" cy="38" r="3.5" fill="#fff" fill-opacity="0.55" />
+</svg>

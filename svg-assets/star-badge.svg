@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">Star badge</title>
+  <desc id="desc">Star badge for lesson completion and streak rewards.</desc>
+  <defs>
+    <radialGradient id="badgeBg" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#1C3555"/>
+      <stop offset="100%" stop-color="#0A1424"/>
+    </radialGradient>
+    <linearGradient id="starGrad" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FFD46B"/>
+      <stop offset="100%" stop-color="#FFB84D"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="50" fill="url(#badgeBg)" stroke="#7FDBFF" stroke-opacity="0.28" stroke-width="3"/>
+  <path d="M60 22 L69 46 L94 47 L74 62 L81 86 L60 72 L39 86 L46 62 L26 47 L51 46 Z"
+        fill="url(#starGrad)" stroke="#FFF4D3" stroke-opacity="0.75" stroke-width="2" stroke-linejoin="round"/>
+</svg>

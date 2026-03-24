@@ -1,0 +1,171 @@
+.board-scene {
+  display: grid;
+  gap: 1rem;
+}
+
+.board-scene__frame {
+  position: relative;
+  width: 100%;
+  max-width: 52rem;
+  aspect-ratio: 780 / 680;
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+.board-scene__frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top, rgba(127, 219, 255, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(12, 24, 42, 0.92), rgba(6, 16, 27, 0.98));
+}
+
+.board-scene__svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.board-scene__hitboxes {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.board-scene__column {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  min-width: 44px;
+}
+
+.board-scene__column[disabled] {
+  cursor: default;
+}
+
+.board-scene__column.is-active {
+  background: linear-gradient(180deg, rgba(113, 247, 213, 0.08), transparent 40%);
+}
+
+.board-chip {
+  transform-origin: center;
+}
+
+.board-chip.is-dropping {
+  animation: board-chip-drop var(--drop-duration, 220ms) var(--ease-out-quart) both;
+}
+
+.board-impact {
+  animation: board-impact 720ms ease-out both;
+  transform-origin: center;
+}
+
+.board-preview {
+  transition:
+    transform var(--dur-fast) var(--ease-out-quart),
+    opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.board-win-line {
+  animation: board-win-line 360ms ease-out both;
+}
+
+.board-confetti rect {
+  transform-origin: center;
+  animation: board-confetti 880ms ease-out both;
+}
+
+.board-confetti rect:nth-child(2) {
+  animation-delay: 40ms;
+}
+
+.board-confetti rect:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.board-confetti rect:nth-child(4) {
+  animation-delay: 130ms;
+}
+
+.board-confetti rect:nth-child(5) {
+  animation-delay: 180ms;
+}
+
+.board-confetti rect:nth-child(6) {
+  animation-delay: 220ms;
+}
+
+.board-confetti rect:nth-child(7) {
+  animation-delay: 260ms;
+}
+
+.board-confetti rect:nth-child(8) {
+  animation-delay: 300ms;
+}
+
+body[data-motion='reduced'] .board-chip.is-dropping {
+  animation-duration: 110ms;
+}
+
+body[data-motion='reduced'] .board-confetti rect {
+  animation-duration: 240ms;
+}
+
+@keyframes board-chip-drop {
+  0% {
+    transform: translate3d(0, var(--drop-offset, -120px), 0) scale(0.98);
+  }
+
+  86% {
+    transform: translate3d(0, 0, 0) scale(1.03);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes board-impact {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes board-win-line {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 1;
+  }
+
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes board-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.5);
+  }
+
+  25% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--x, 0), var(--y, 0), 0) rotate(220deg) scale(1);
+  }
+}

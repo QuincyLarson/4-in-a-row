@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">Confetti burst</title>
+  <desc id="desc">Simple SVG confetti burst for wins and boss clears.</desc>
+  <style>
+    .piece {
+      transform-origin: 80px 80px;
+      animation: burst 900ms ease-out infinite;
+    }
+    .piece:nth-child(2) { animation-delay: 60ms; }
+    .piece:nth-child(3) { animation-delay: 120ms; }
+    .piece:nth-child(4) { animation-delay: 180ms; }
+    .piece:nth-child(5) { animation-delay: 240ms; }
+    .piece:nth-child(6) { animation-delay: 300ms; }
+    .piece:nth-child(7) { animation-delay: 360ms; }
+    .piece:nth-child(8) { animation-delay: 420ms; }
+    @keyframes burst {
+      0% { transform: translate(0,0) scale(0.35) rotate(0deg); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: var(--move) scale(1) rotate(220deg); opacity: 0; }
+    }
+  </style>
+  <circle cx="80" cy="80" r="6" fill="#ffffff" opacity="0.65"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#FF8A5B" style="--move: translate(0,-58px)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#8FA8FF" transform="rotate(45 80 80)" style="--move: translate(42px,-42px)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#FFD46B" transform="rotate(90 80 80)" style="--move: translate(58px,0)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#71F7D5" transform="rotate(135 80 80)" style="--move: translate(42px,42px)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#ffffff" opacity="0.8" transform="rotate(180 80 80)" style="--move: translate(0,58px)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#FF5D6C" transform="rotate(225 80 80)" style="--move: translate(-42px,42px)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#5E6CFF" transform="rotate(270 80 80)" style="--move: translate(-58px,0)"/>
+  <rect class="piece" x="76" y="76" width="8" height="16" rx="2" fill="#FFB84D" transform="rotate(315 80 80)" style="--move: translate(-42px,-42px)"/>
+</svg>
