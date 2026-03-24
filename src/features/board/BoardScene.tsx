@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 
 import {
   COLS,
@@ -68,6 +68,7 @@ export function BoardScene({
   lastMoveColumn = board.moves.at(-1) ?? null,
   winningLine,
 }: BoardSceneProps) {
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const defsId = useId().replace(/:/g, '-');
   const dropRow =
     lastMoveColumn !== null && board.moves.length > 0
@@ -88,6 +89,7 @@ export function BoardScene({
   return (
     <div className="board-scene">
       <div
+        ref={frameRef}
         className="board-scene__frame"
         role="group"
         aria-label={status}
@@ -373,10 +375,15 @@ export function BoardScene({
                 previewColumn === column ? ' is-active' : ''
               }`}
               aria-label={`Drop in column ${column + 1}`}
+              tabIndex={-1}
               disabled={disabled || !legal.has(column)}
+              onMouseDown={(event) => {
+                event.preventDefault();
+                frameRef.current?.focus();
+              }}
               onMouseEnter={() => onHoverColumn?.(column)}
               onMouseLeave={() => onHoverColumn?.(null)}
-              onFocus={() => onHoverColumn?.(column)}
+              onFocus={() => frameRef.current?.focus()}
               onClick={() => onSelectColumn?.(column)}
             />
           ))}

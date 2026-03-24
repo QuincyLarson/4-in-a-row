@@ -7,6 +7,35 @@ import { GameArena } from '../../features/battle/GameArena';
 import { BoardScene } from '../../features/board/BoardScene';
 
 describe('BoardScene', () => {
+  it('moves focus to the board frame when a column is clicked, so keyboard shortcuts work', () => {
+    const onMovePreview = vi.fn();
+    const onPrimaryAction = vi.fn();
+
+    render(
+      <BoardScene
+        board={boardFromMoves([3, 2])}
+        previewColumn={3}
+        onMovePreview={onMovePreview}
+        onPrimaryAction={onPrimaryAction}
+        status="Interactive board"
+      />,
+    );
+
+    const frame = screen.getByRole('group', { name: 'Interactive board' });
+    const column = screen.getByRole('button', { name: 'Drop in column 4' });
+
+    fireEvent.mouseDown(column);
+    fireEvent.click(column);
+
+    expect(frame).toHaveFocus();
+
+    fireEvent.keyDown(frame, { key: 'ArrowLeft' });
+    fireEvent.keyDown(frame, { key: 'Enter' });
+
+    expect(onMovePreview).toHaveBeenCalledWith(-1);
+    expect(onPrimaryAction).toHaveBeenCalledTimes(1);
+  });
+
   it('does not respond to keyboard shortcuts when disabled', () => {
     const onMovePreview = vi.fn();
     const onPrimaryAction = vi.fn();
