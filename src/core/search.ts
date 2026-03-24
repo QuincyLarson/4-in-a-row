@@ -3,6 +3,8 @@ import {
   applyMove,
   boardKey,
   boardOutcome,
+  cellOwner,
+  getDropRow,
   legalMoves,
   orderedLegalMoves,
 } from './board';
@@ -163,6 +165,20 @@ export function tacticalPrecheck(board: BoardState, profile: AIProfile): BattleM
     };
   }
 
+  const openingContest = findOpeningContestMove(board, profile, opponentSide);
+  if (openingContest !== null) {
+    return {
+      profile,
+      source: 'tactical',
+      column: openingContest,
+      score: Math.max(24, Math.floor(profile.threatWeight / 2)),
+      depth: 0,
+      nodes: 0,
+      completed: true,
+      principalVariation: [openingContest],
+    };
+  }
+
   if (legal.length === 0) {
     return {
       profile,
@@ -186,6 +202,68 @@ export function tacticalPrecheck(board: BoardState, profile: AIProfile): BattleM
     completed: false,
     principalVariation: [],
   };
+}
+
+function findOpeningContestMove(
+  board: BoardState,
+  profile: AIProfile,
+  opponentSide: Side,
+): number | null {
+  if (board.moves.length > 6) {
+    return null;
+  }
+
+  if (board.moves.length === 1 && cellOwner(board, 3, 0) === opponentSide) {
+    const adjacentCenter = [2, 4].filter((column) => getDropRow(board, column) === 0);
+    if (adjacentCenter.length > 0) {
+      return chooseBestMoveFromSet(board, adjacentCenter, profile);
+    }
+  }
+
+  const candidates = findBottomRunContestColumns(board, opponentSide);
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  return chooseBestMoveFromSet(board, candidates, profile);
+}
+
+function findBottomRunContestColumns(board: BoardState, side: Side): number[] {
+  let bestRunLength = 0;
+  const candidates = new Set<number>();
+
+  for (let start = 0; start < 7; start += 1) {
+    if (cellOwner(board, start, 0) !== side) {
+      continue;
+    }
+
+    let end = start;
+    while (end + 1 < 7 && cellOwner(board, end + 1, 0) === side) {
+      end += 1;
+    }
+
+    const runLength = end - start + 1;
+    if (runLength >= 2) {
+      const runCandidates = [start - 1, end + 1].filter(
+        (column) => column >= 0 && column < 7 && getDropRow(board, column) === 0,
+      );
+      if (runCandidates.length > 0) {
+        if (runLength > bestRunLength) {
+          bestRunLength = runLength;
+          candidates.clear();
+        }
+        if (runLength === bestRunLength) {
+          for (const column of runCandidates) {
+            candidates.add(column);
+          }
+        }
+      }
+    }
+
+    start = end;
+  }
+
+  return Array.from(candidates);
 }
 
 function chooseBestMoveFromSet(board: BoardState, candidates: number[], profile: AIProfile): number {
@@ -226,7 +304,14 @@ function iterativeDeepeningSearch(
       break;
     }
     const result = searchRoot(board, profile, depth, options, budget);
-    if (result.column !== null && (result.score > best.score || !best.completed)) {
+    if (
+      result.column !== null &&
+      (
+        (result.completed && (!best.completed || result.depth >= best.depth)) ||
+        (best.column === null && !result.completed) ||
+        (!result.completed && !best.completed && result.depth >= best.depth)
+      )
+    ) {
       best = result;
     }
     if (result.completed && Math.abs(result.score) >= MATE_SCORE - 100) {

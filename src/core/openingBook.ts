@@ -4,19 +4,8 @@ import { historyPositionKey, mirroredHistoryKey } from './notation';
 
 const BOOK_ENTRIES = new Map<string, number>([
   ['human:', 3],
-  ['cpu:4', 3],
-  ['human:4,4', 2],
-  ['cpu:4,4', 3],
-  ['human:4,4,3', 4],
-  ['cpu:4,4,3', 2],
-  ['human:4,4,3,5', 3],
-  ['cpu:4,4,3,5', 3],
-  ['human:4,4,3,5,4', 2],
-  ['cpu:4,4,3,5,4', 4],
-  ['human:4,3', 3],
-  ['cpu:4,3', 4],
-  ['human:4,3,4', 2],
-  ['cpu:4,3,4', 4],
+  ['cpu:4', 2],
+  ['human:4,3', 4],
 ]);
 
 export interface OpeningBookHit {

@@ -43,6 +43,26 @@ describe('tactical prechecks and opening book', () => {
     expect(hit?.column).toBe(3);
     expect(hit?.mirrored).toBe(false);
   });
+
+  it('steers a center opener toward an adjacent base column', () => {
+    const hit = lookupOpeningBook(boardFromMoves([3]));
+    expect(hit?.column).toBe(2);
+    expect(hit?.mirrored).toBe(false);
+  });
+
+  it('contests a lone center opener before book or search can stack on it', () => {
+    const board = boardFromMoves([3]);
+    const precheck = tacticalPrecheck(board, AI_PROFILES[4]);
+    expect(precheck.source).toBe('tactical');
+    expect([2, 4]).toContain(precheck.column);
+  });
+
+  it('contests an early bottom-row pair before deeper search', () => {
+    const board = boardFromMoves([3, 3, 4]);
+    const precheck = tacticalPrecheck(board, AI_PROFILES[4]);
+    expect(precheck.source).toBe('tactical');
+    expect([2, 5]).toContain(precheck.column);
+  });
 });
 
 describe('battle AI', () => {
@@ -92,5 +112,46 @@ describe('battle AI', () => {
 
       expect(Boolean(board.winner || board.isDraw || legalMoves(board).length === 0)).toBe(true);
     }
+  });
+
+  it('prevents the easy D-then-E opening cheese for stronger tiers', () => {
+    const board = boardFromMoves([3, 3, 4]);
+
+    for (const profile of AI_PROFILES.slice(2)) {
+      const result = chooseBattleMove(board, profile, {
+        resetTranspositionTable: true,
+        deadlineMs: Date.now(),
+      });
+      expect([2, 5]).toContain(result.column);
+    }
+  });
+
+  it('iterative deepening keeps the deepest completed search result', () => {
+    const board = boardFromMoves([2, 3, 5, 5, 5, 0, 6, 2, 5, 5, 0, 2]);
+    const iterativeProfile = {
+      ...AI_PROFILES[2],
+      useOpeningBook: false,
+      searchNodeLimit: 100_000,
+    };
+
+    const iterative = chooseBattleMove(board, iterativeProfile, {
+      resetTranspositionTable: true,
+      deadlineMs: Date.now() + 5_000,
+    });
+    const fixedDepth = chooseBattleMove(
+      board,
+      {
+        ...iterativeProfile,
+        iterativeDeepening: false,
+      },
+      {
+        resetTranspositionTable: true,
+        deadlineMs: Date.now() + 5_000,
+      },
+    );
+
+    expect(iterative.column).toBe(fixedDepth.column);
+    expect(iterative.depth).toBe(iterativeProfile.depth);
+    expect(fixedDepth.depth).toBe(iterativeProfile.depth);
   });
 });
