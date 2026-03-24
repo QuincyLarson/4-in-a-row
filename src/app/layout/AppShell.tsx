@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react';
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { curriculumByLesson, strategyArticleBySlug } from '../../content';
+
 const navItems = [
   { to: '/', label: 'Home' },
   { to: '/learn', label: 'Learn' },
@@ -13,6 +15,7 @@ const navItems = [
 
 export function AppShell() {
   const location = useLocation();
+  const breadcrumb = breadcrumbForPath(location.pathname);
 
   useEffect(() => {
     const title = titleForPath(location.pathname);
@@ -28,34 +31,26 @@ export function AppShell() {
   return (
     <div style={shellStyles.frame}>
       <header style={shellStyles.header}>
-        <div style={shellStyles.brandRow}>
-          <div style={shellStyles.brandWrap}>
-            <span style={shellStyles.eyebrow}>Learn Drop 4</span>
-            <div style={shellStyles.brand}>Play, learn, and review in one place.</div>
-            <p style={shellStyles.lede}>
-              Fast local play, short lessons, and saved progress without an account.
-            </p>
-            <div style={shellStyles.meta}>
-              <span style={shellStyles.metaChip}>Local save</span>
-              <span style={shellStyles.metaChip}>SVG board</span>
-              <span style={shellStyles.metaChip}>Worker AI</span>
-            </div>
-          </div>
+        <div style={shellStyles.topBar}>
+          <NavLink to="/" style={shellStyles.brand}>
+            Learn Drop 4
+          </NavLink>
+          <div style={shellStyles.breadcrumb}>{breadcrumb}</div>
+          <nav aria-label="Primary navigation" style={shellStyles.nav}>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                style={({ isActive }) => ({
+                  ...shellStyles.link,
+                  ...(isActive ? shellStyles.linkActive : {}),
+                })}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-        <nav aria-label="Primary navigation" style={shellStyles.nav}>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              style={({ isActive }) => ({
-                ...shellStyles.link,
-                ...(isActive ? shellStyles.linkActive : {}),
-              })}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
       <main style={shellStyles.main}>
         <div style={shellStyles.content}>
@@ -140,6 +135,47 @@ function descriptionForPath(pathname: string) {
   return 'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, and review.';
 }
 
+function breadcrumbForPath(pathname: string) {
+  if (pathname === '/') {
+    return 'Home';
+  }
+  if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
+    return 'Lessons';
+  }
+  if (pathname.startsWith('/lesson/')) {
+    const lessonId = pathname.split('/').at(-1) ?? '';
+    const lesson = curriculumByLesson.get(lessonId);
+    return lesson ? `Lessons > ${lesson.title}` : 'Lessons';
+  }
+  if (pathname === '/play' || pathname === '/play/connect-4-online') {
+    return 'Play';
+  }
+  if (pathname === '/battle') {
+    return 'Battle';
+  }
+  if (pathname === '/review') {
+    return 'Review';
+  }
+  if (pathname === '/profile') {
+    return 'Profile';
+  }
+  if (pathname === '/about') {
+    return 'About';
+  }
+  if (pathname.startsWith('/strategy/')) {
+    const slug = pathname.split('/').at(-1) ?? '';
+    const article = strategyArticleBySlug.get(slug);
+    return article ? `Strategy > ${article.title}` : 'Strategy';
+  }
+  if (pathname === '/sandbox') {
+    return 'Sandbox';
+  }
+  if (pathname === '/credits') {
+    return 'Credits';
+  }
+  return 'Learn Drop 4';
+}
+
 const shellStyles: Record<string, CSSProperties> = {
   frame: {
     display: 'grid',
@@ -147,69 +183,51 @@ const shellStyles: Record<string, CSSProperties> = {
     minHeight: '100vh',
   },
   header: {
-    display: 'grid',
-    gap: '0.8rem',
-    padding: '1rem 1rem 0',
+    padding: '0.8rem 1rem 0',
     justifyItems: 'center',
   },
-  brandRow: {
+  topBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
     width: '100%',
     maxWidth: 'var(--max-width)',
-    padding: '1.1rem 1.2rem',
+    padding: '0.75rem 0.9rem',
     borderRadius: 'var(--radius-lg)',
     background: 'var(--panel)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
     boxShadow: 'var(--shadow)',
   },
-  brandWrap: {
-    display: 'grid',
-    gap: '0.35rem',
-  },
-  eyebrow: {
-    color: 'var(--accent-2)',
-    fontSize: '0.8rem',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-  },
   brand: {
-    fontSize: 'clamp(1.5rem, 4vw, 2.45rem)',
-    lineHeight: 1.05,
+    color: 'var(--ink)',
+    textDecoration: 'none',
+    fontSize: '1.1rem',
     fontFamily: 'var(--font-display)',
+    whiteSpace: 'nowrap',
   },
-  lede: {
-    margin: 0,
-    maxWidth: '42rem',
+  breadcrumb: {
+    minWidth: 0,
+    flex: '1 1 auto',
     color: 'var(--muted)',
-    lineHeight: 1.6,
-  },
-  meta: {
-    display: 'flex',
-    gap: '0.5rem',
-    flexWrap: 'wrap' as const,
-    marginTop: '0.15rem',
-  },
-  metaChip: {
-    padding: '0.35rem 0.7rem',
-    borderRadius: '999px',
-    background: 'rgba(255, 255, 255, 0.04)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-    color: 'var(--muted)',
-    fontSize: '0.82rem',
+    fontSize: '0.9rem',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   },
   nav: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.5rem',
-    width: '100%',
-    maxWidth: 'var(--max-width)',
+    justifyContent: 'flex-end',
+    gap: '0.35rem',
   },
   link: {
-    padding: '0.72rem 0.92rem',
-    borderRadius: 'var(--radius-md)',
+    padding: '0.55rem 0.7rem',
+    borderRadius: '0.75rem',
     color: 'var(--muted)',
     textDecoration: 'none',
     background: 'var(--surface)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
+    fontSize: '0.9rem',
   },
   linkActive: {
     color: 'var(--ink)',
@@ -221,13 +239,13 @@ const shellStyles: Record<string, CSSProperties> = {
     display: 'grid',
     alignContent: 'start',
     justifyItems: 'center',
-    padding: '1rem 1rem 2rem',
+    padding: '0.85rem 1rem 1.6rem',
   },
   content: {
     width: '100%',
     maxWidth: 'var(--max-width)',
     minHeight: '30rem',
-    padding: 'clamp(1rem, 2vw, 1.5rem)',
+    padding: 'clamp(0.9rem, 1.6vw, 1.2rem)',
     borderRadius: 'var(--radius-lg)',
     background: 'var(--panel)',
     border: '1px solid rgba(245, 246, 247, 0.08)',

@@ -37,6 +37,7 @@ export interface SaveEnvelopeV1 {
     completedLessonIds: string[];
     lessonStars: Record<string, number>;
     bossWins: string[];
+    clearedAiIds: string[];
     worldUnlocks: string[];
     conceptScores: Record<string, number>;
     capstonePassed: boolean;

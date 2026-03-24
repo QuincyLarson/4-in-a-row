@@ -75,6 +75,7 @@ describe('app routes', () => {
     renderRoute('/lesson/world-0-board-and-gravity');
 
     await screen.findByRole('heading', { name: 'The board and gravity' });
+    expect(screen.getAllByText('Lessons > The board and gravity').length).toBeGreaterThan(0);
     expect(document.title).toBe('Lesson - Learn Drop 4');
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toContain(
       'board-first lesson',
@@ -113,9 +114,9 @@ describe('app routes', () => {
   it('gates the ladder and the play page to unlocked opponents', async () => {
     renderRoute('/battle');
 
-    await screen.findByRole('heading', { name: 'Named opponents that teach through pressure.' });
-    expect(screen.getByText('Center Sentinel')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Unlock in Learn' }).length).toBeGreaterThan(0);
+    await screen.findByRole('heading', { name: 'Climb the ladder.' });
+    expect(screen.getByText('Level 2: Center Sentinel')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Beat / }).length).toBeGreaterThan(0);
 
     renderRoute('/play?ai=endgame-engine');
 
@@ -192,5 +193,14 @@ describe('app routes', () => {
     renderRoute('/strategy/play-connect-4-online');
     await screen.findByRole('heading', { name: 'Play Connect 4 Online' });
     expect(screen.getByText('Related lessons')).toBeInTheDocument();
+  });
+
+  it('shows the simplified landing copy on home', async () => {
+    renderRoute('/');
+
+    await screen.findByRole('heading', {
+      name: 'Learn the 4 in a row game for free in your browser.',
+    });
+    expect(screen.getByText('No ads. No sign-in. Just local play, short lessons, and review.')).toBeInTheDocument();
   });
 });

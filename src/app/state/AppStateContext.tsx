@@ -158,10 +158,19 @@ function reducer(state: AppState, action: AppAction): AppState {
       };
     }
     case 'record-game':
+      {
+        const clearedAiIds =
+          action.result === 'win'
+            ? Array.from(new Set([...state.save.progress.clearedAiIds, action.aiId]))
+            : state.save.progress.clearedAiIds;
       return {
         ...state,
         save: {
           ...state.save,
+          progress: {
+            ...state.save.progress,
+            clearedAiIds,
+          },
           history: {
             recentGames: [
               {
@@ -176,6 +185,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           },
         },
       };
+      }
     case 'queue-review': {
       const existing = state.save.review.entries.find(
         (entry) => entry.puzzleId === action.entry.puzzleId,

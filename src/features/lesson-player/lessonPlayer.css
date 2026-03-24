@@ -1,0 +1,23 @@
+.lesson-player__topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.lesson-player__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.lesson-player__sidebar {
+  align-content: start;
+}
+
+@media (min-width: 980px) {
+  .lesson-player__grid {
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    align-items: start;
+  }
+}

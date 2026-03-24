@@ -21,6 +21,7 @@ export function createDefaultSave(now = new Date()): SaveEnvelopeV1 {
       completedLessonIds: [],
       lessonStars: {},
       bossWins: [],
+      clearedAiIds: [],
       worldUnlocks: ['world-0', 'battle'],
       conceptScores: {},
       capstonePassed: false,
@@ -92,6 +93,7 @@ function sanitizeV1(input: Record<string, unknown>): SaveEnvelopeV1 {
       completedLessonIds: sanitizeStringArray(progress.completedLessonIds),
       lessonStars: sanitizeNumberRecord(progress.lessonStars),
       bossWins: sanitizeStringArray(progress.bossWins),
+      clearedAiIds: sanitizeStringArray(progress.clearedAiIds),
       worldUnlocks:
         sanitizeStringArray(progress.worldUnlocks).length > 0
           ? sanitizeStringArray(progress.worldUnlocks)

@@ -18,8 +18,8 @@ export function HomePage() {
   return (
     <PageSection
       eyebrow="Welcome"
-      title="Learn Drop 4"
-      body="Play first, then learn the patterns that matter. The whole course stays local, fast, and easy to return to."
+      title="Learn the 4 in a row game for free in your browser."
+      body="No ads. No sign-in. Just local play, short lessons, and review."
       actions={
         <>
           <RouteButton to="/play" tone="accent">Play now</RouteButton>
@@ -31,7 +31,7 @@ export function HomePage() {
       <CardGrid>
         <Card
           title="Start here"
-          body="A short path that gets a new visitor moving without a wall of instructions."
+          body="One quick path from first move to strong practical play."
           accent="var(--warning)"
           footer={
             <>
@@ -49,7 +49,7 @@ export function HomePage() {
         </Card>
         <Card
           title="Your progress"
-          body="Saved locally and ready to resume after refresh."
+          body="Saved locally and ready to resume."
           accent="var(--cpu-0)"
           footer={
             <>

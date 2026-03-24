@@ -11,13 +11,15 @@ export function BattlePage() {
   return (
     <PageSection
       eyebrow="Battle Ladder"
-      title="Named opponents that teach through pressure."
-      body="Warmup Bot gets you moving. The bosses punish exactly the concepts the lessons are trying to install."
+      title="Climb the ladder."
+      body="Beat one level to unlock the next."
     >
       <CardGrid>
         {battleAis.map((ai) => {
-          const beaten = save.progress.bossWins.includes(ai.id);
+          const beaten =
+            save.progress.clearedAiIds.includes(ai.id) || save.progress.bossWins.includes(ai.id);
           const unlocked = isAiUnlocked(save, ai);
+          const previousAi = battleAis.find((profile) => profile.level === ai.level - 1) ?? null;
           const tone =
             ai.role === 'analysis'
               ? 'var(--warning)'
@@ -28,39 +30,24 @@ export function BattlePage() {
           return (
             <Card
               key={ai.id}
-              title={ai.name}
+              title={`Level ${ai.level}: ${ai.name}`}
               body={ai.summary}
               accent={tone}
               footer={
                 <>
-                  <Chip>Level {ai.level}</Chip>
                   <Chip tone={beaten ? 'success' : unlocked ? 'default' : 'warning'}>
-                    {beaten
-                      ? 'Cleared'
-                      : ai.role === 'analysis'
-                        ? unlocked
-                          ? 'Analysis'
-                          : 'Locked'
-                        : unlocked
-                          ? 'Available'
-                          : 'Locked'}
+                    {beaten ? 'Cleared' : unlocked ? 'Ready' : 'Locked'}
                   </Chip>
-                  <Chip>{ai.tacticalBudgetMs}ms target</Chip>
                 </>
               }
             >
-              <ul style={battle.list}>
-                {ai.strengths.map((strength) => (
-                  <li key={strength}>{strength}</li>
-                ))}
-              </ul>
               {ai.role !== 'analysis' ? (
-                <RouteButton to={unlocked ? `/play?ai=${ai.id}` : '/learn'} tone={unlocked ? 'accent' : 'default'}>
-                  {unlocked ? 'Start this match' : 'Unlock in Learn'}
+                <RouteButton to={unlocked ? `/play?ai=${ai.id}` : '/battle'} tone={unlocked ? 'accent' : 'default'} disabled={!unlocked}>
+                  {unlocked ? 'Start match' : `Beat ${previousAi?.name ?? 'the previous level'}`}
                 </RouteButton>
               ) : (
-                <RouteButton to={unlocked ? '/sandbox' : '/learn'} tone={unlocked ? 'accent' : 'default'}>
-                  {unlocked ? 'Open analysis sandbox' : 'Reach Oracle to unlock'}
+                <RouteButton to={unlocked ? '/sandbox' : '/battle'} tone={unlocked ? 'accent' : 'default'} disabled={!unlocked}>
+                  {unlocked ? 'Open coach' : `Beat ${previousAi?.name ?? 'the previous level'}`}
                 </RouteButton>
               )}
             </Card>
@@ -70,12 +57,3 @@ export function BattlePage() {
     </PageSection>
   );
 }
-
-const battle = {
-  list: {
-    margin: 0,
-    paddingLeft: '1rem',
-    color: 'var(--muted)',
-    lineHeight: 1.7,
-  },
-};

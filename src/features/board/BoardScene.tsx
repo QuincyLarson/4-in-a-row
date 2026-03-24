@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef } from 'react';
 
 import {
   COLS,
@@ -47,6 +47,7 @@ type BoardSceneProps = {
   showConfetti?: boolean;
   lastMoveColumn?: number | null;
   winningLine?: WinningLine | null;
+  outcomeLabel?: string | null;
 };
 
 export function BoardScene({
@@ -67,6 +68,7 @@ export function BoardScene({
   showConfetti = false,
   lastMoveColumn = board.moves.at(-1) ?? null,
   winningLine,
+  outcomeLabel = null,
 }: BoardSceneProps) {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const defsId = useId().replace(/:/g, '-');
@@ -85,6 +87,71 @@ export function BoardScene({
   const previewRow =
     previewColumn !== null ? getDropRow(board, previewColumn) : null;
   const legal = new Set(legalMoves(board));
+  const interactive = !disabled && Boolean(
+    onMovePreview || onPrimaryAction || onHint || onRestart || onUndo || onToggleMute,
+  );
+
+  const handleShortcut = useCallback(
+    (event: { key: string; preventDefault: () => void }) => {
+      if (!interactive) {
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        onMovePreview?.(-1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        onMovePreview?.(1);
+      } else if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onPrimaryAction?.();
+      } else if (event.key.toLowerCase() === 'h') {
+        event.preventDefault();
+        onHint?.();
+      } else if (event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        onRestart?.();
+      } else if (event.key.toLowerCase() === 'u') {
+        event.preventDefault();
+        onUndo?.();
+      } else if (event.key.toLowerCase() === 'm') {
+        event.preventDefault();
+        onToggleMute?.();
+      }
+    },
+    [interactive, onHint, onMovePreview, onPrimaryAction, onRestart, onToggleMute, onUndo],
+  );
+
+  useEffect(() => {
+    if (!interactive) {
+      return;
+    }
+
+    const onWindowKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'SELECT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (target instanceof Node && frameRef.current?.contains(target)) {
+        return;
+      }
+
+      handleShortcut(event);
+    };
+
+    window.addEventListener('keydown', onWindowKeyDown);
+    return () => window.removeEventListener('keydown', onWindowKeyDown);
+  }, [handleShortcut, interactive]);
 
   return (
     <div className="board-scene">
@@ -94,29 +161,7 @@ export function BoardScene({
         role="group"
         aria-label={status}
         tabIndex={0}
-        onKeyDown={(event) => {
-          if (disabled) {
-            return;
-          }
-          if (event.key === 'ArrowLeft') {
-            event.preventDefault();
-            onMovePreview?.(-1);
-          } else if (event.key === 'ArrowRight') {
-            event.preventDefault();
-            onMovePreview?.(1);
-          } else if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onPrimaryAction?.();
-          } else if (event.key.toLowerCase() === 'h') {
-            onHint?.();
-          } else if (event.key.toLowerCase() === 'r') {
-            onRestart?.();
-          } else if (event.key.toLowerCase() === 'u') {
-            onUndo?.();
-          } else if (event.key.toLowerCase() === 'm') {
-            onToggleMute?.();
-          }
-        }}
+        onKeyDown={handleShortcut}
       >
         <svg
           className="board-scene__svg"
@@ -252,18 +297,16 @@ export function BoardScene({
                   <g
                     key={`${col}-${row}-${owner}`}
                     className={`board-chip${isLatest ? ' board-chip--latest-hole' : ''}`}
+                    style={
+                      isLatest
+                        ? ({
+                            '--drop-duration': `${getDropDurationMs(row, reducedMotion)}ms`,
+                          } as CSSProperties)
+                        : undefined
+                    }
                     transform={`translate(${columnX(col)} ${columnY(row)})`}
                   >
                     {owner === 'human' ? <HumanChip /> : <CpuChip />}
-                    {isLatest ? (
-                      <animate
-                        attributeName="opacity"
-                        values={reducedMotion ? '0;1;1' : '0;0;1;1'}
-                        keyTimes={reducedMotion ? '0;0.45;1' : '0;0.72;0.9;1'}
-                        dur={`${getDropDurationMs(row, reducedMotion)}ms`}
-                        fill="freeze"
-                      />
-                    ) : null}
                   </g>
                 );
               }),
@@ -352,6 +395,32 @@ export function BoardScene({
             </g>
           ) : null}
 
+          {outcomeLabel ? (
+            <g className="board-outcome" transform="translate(390 338)">
+              <rect
+                x="-132"
+                y="-36"
+                width="264"
+                height="72"
+                rx="22"
+                fill="#0a0a23"
+                fillOpacity="0.84"
+                stroke="#f5f6f7"
+                strokeOpacity="0.16"
+              />
+              <text
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#f5f6f7"
+                fontSize="28"
+                fontWeight="700"
+                letterSpacing="0.04em"
+              >
+                {outcomeLabel}
+              </text>
+            </g>
+          ) : null}
+
           {showConfetti ? (
             <g className="board-confetti" transform="translate(390 72)">
               <rect x="-4" y="-10" width="8" height="16" rx="2" fill="#FF8A5B" style={pieceMove(0, -56)} />
@@ -389,7 +458,6 @@ export function BoardScene({
           ))}
         </div>
       </div>
-      <p style={boardSceneStyles.status}>{status}</p>
     </div>
   );
 }
@@ -407,110 +475,53 @@ function DroppingChipMotion({
     ? Math.min(120, getDropOffsetPx(row))
     : getDropOffsetPx(row);
   const durationMs = getDropDurationMs(row, reducedMotion);
+  const bouncePx = reducedMotion ? 0 : Math.max(5, 12 - row);
+  const motionStyle = {
+    '--drop-start': `${-dropOffset}px`,
+    '--drop-bounce': `${bouncePx}px`,
+    '--drop-duration': `${durationMs}ms`,
+  } as CSSProperties;
 
   return (
-    <g transform={`translate(0 ${-dropOffset})`}>
+    <g className="board-drop-motion" style={motionStyle}>
       {owner === 'human' ? <HumanChip /> : <CpuChip />}
-      <animateTransform
-        attributeName="transform"
-        type="translate"
-        values={
-          reducedMotion
-            ? `0 ${-dropOffset}; 0 0`
-            : `0 ${-dropOffset}; 0 0; 0 8; 0 0`
-        }
-        keyTimes={reducedMotion ? '0;1' : '0;0.74;0.88;1'}
-        calcMode={reducedMotion ? 'linear' : 'spline'}
-        keySplines={
-          reducedMotion
-            ? undefined
-            : '0.22 1 0.36 1; 0.14 0.82 0.3 1; 0.2 0.9 0.3 1'
-        }
-        dur={`${durationMs}ms`}
-        fill="freeze"
-      />
-      <animate
-        attributeName="opacity"
-        values={reducedMotion ? '1;0' : '1;1;1;0'}
-        keyTimes={reducedMotion ? '0;1' : '0;0.88;0.98;1'}
-        dur={`${durationMs}ms`}
-        fill="freeze"
-      />
     </g>
   );
 }
 
 function ImpactPulse({ row, reducedMotion }: { row: number; reducedMotion: boolean }) {
-  const durationMs = reducedMotion ? 140 : 460;
-  const beginMs = getImpactDelayMs(row, reducedMotion);
+  const impactStyle = {
+    '--impact-duration': `${reducedMotion ? 140 : 460}ms`,
+    '--impact-delay': `${getImpactDelayMs(row, reducedMotion)}ms`,
+  } as CSSProperties;
 
   return (
     <>
-      <circle r="28" fill="none" stroke="#acd157" strokeWidth="4" opacity="0">
-        <animate
-          attributeName="opacity"
-          values="0;0.92;0"
-          keyTimes="0;0.18;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-        <animateTransform
-          attributeName="transform"
-          type="scale"
-          values="0.4;1;1.35"
-          keyTimes="0;0.18;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-      </circle>
-              <circle
-                r="28"
-                fill="none"
-                stroke="#f5f6f7"
-                strokeOpacity="0.6"
-                strokeWidth="2"
-                strokeDasharray="5 5"
-                opacity="0"
-              >
-        <animate
-          attributeName="opacity"
-          values="0;0.75;0"
-          keyTimes="0;0.18;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-        <animateTransform
-          attributeName="transform"
-          type="scale"
-          values="0.55;1;1.25"
-          keyTimes="0;0.18;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-      </circle>
-      <circle r="10" fill="#0a0a23" fillOpacity="0.18" opacity="0">
-        <animate
-          attributeName="opacity"
-          values="0;0.24;0"
-          keyTimes="0;0.2;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-        <animateTransform
-          attributeName="transform"
-          type="scale"
-          values="0.5;1;1.1"
-          keyTimes="0;0.2;1"
-          dur={`${durationMs}ms`}
-          begin={`${beginMs}ms`}
-          fill="freeze"
-        />
-      </circle>
+      <circle
+        className="board-impact-ring"
+        style={impactStyle}
+        r="28"
+        fill="none"
+        stroke="#acd157"
+        strokeWidth="4"
+      />
+      <circle
+        className="board-impact-dash"
+        style={impactStyle}
+        r="28"
+        fill="none"
+        stroke="#f5f6f7"
+        strokeOpacity="0.6"
+        strokeWidth="2"
+        strokeDasharray="5 5"
+      />
+      <circle
+        className="board-impact-core"
+        style={impactStyle}
+        r="10"
+        fill="#0a0a23"
+        fillOpacity="0.18"
+      />
     </>
   );
 }
@@ -629,11 +640,3 @@ function lastOccupiedRow(board: BoardState, column: number) {
   }
   return Math.max(0, row - 1);
 }
-
-const boardSceneStyles = {
-  status: {
-    margin: 0,
-    color: 'var(--muted)',
-    lineHeight: 1.6,
-  },
-};

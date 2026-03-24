@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { boardFromMoves } from '../../core';
@@ -62,6 +63,44 @@ describe('BoardScene', () => {
     expect(onMovePreview).not.toHaveBeenCalled();
     expect(onPrimaryAction).not.toHaveBeenCalled();
   });
+
+  it('handles keyboard shortcuts globally when the board is not focused', () => {
+    const onMovePreview = vi.fn();
+    const onHint = vi.fn();
+
+    render(
+      <>
+        <button type="button">Outside</button>
+        <BoardScene
+          board={boardFromMoves([3, 2])}
+          previewColumn={3}
+          onMovePreview={onMovePreview}
+          onHint={onHint}
+          status="Global board"
+        />
+      </>,
+    );
+
+    screen.getByRole('button', { name: 'Outside' }).focus();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    fireEvent.keyDown(window, { key: 'h' });
+
+    expect(onMovePreview).toHaveBeenCalledWith(1);
+    expect(onHint).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders outcome text over the board', () => {
+    render(
+      <BoardScene
+        board={boardFromMoves([3, 2])}
+        previewColumn={3}
+        status="Won board"
+        outcomeLabel="You win!"
+      />,
+    );
+
+    expect(screen.getByText('You win!')).toBeInTheDocument();
+  });
 });
 
 describe('GameArena', () => {
@@ -75,9 +114,11 @@ describe('GameArena', () => {
 
   it('locks the preview while a chip is still dropping and restores it after the delay', async () => {
     const { container } = render(
-      <AppStateProvider>
-        <GameArena title="Sandbox" description="Manual board" mode="sandbox" />
-      </AppStateProvider>,
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena title="Sandbox" description="Manual board" mode="sandbox" />
+        </AppStateProvider>
+      </MemoryRouter>,
     );
 
     expect(container.querySelector('.board-preview--hover')).not.toBeNull();
@@ -103,23 +144,27 @@ describe('GameArena', () => {
 
   it('keeps the control rail rendered with match tools and coach content', () => {
     render(
-      <AppStateProvider>
-        <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
-      </AppStateProvider>,
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+        </AppStateProvider>
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('complementary', { name: 'Match tools' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Controls' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Coach' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Hint' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show hint' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset board' })).toBeInTheDocument();
   });
 
   it('shows the cpu reply as a visible dropping chip before the next human turn', async () => {
     const { container } = render(
-      <AppStateProvider>
-        <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
-      </AppStateProvider>,
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+        </AppStateProvider>
+      </MemoryRouter>,
     );
 
     await act(async () => {

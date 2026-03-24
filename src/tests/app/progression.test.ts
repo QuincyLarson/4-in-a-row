@@ -44,7 +44,7 @@ describe('progression helpers', () => {
     dateNowSpy.mockRestore();
   });
 
-  it('locks worlds and battle tiers until the prior world is cleared', () => {
+  it('locks worlds until the prior world is cleared', () => {
     const save = makeSave();
     const world0 = curriculumByWorld.get('world-0')!;
     const world1 = curriculumByWorld.get('world-1')!;
@@ -53,21 +53,34 @@ describe('progression helpers', () => {
     expect(isWorldUnlocked(save, world0)).toBe(true);
     expect(isWorldUnlocked(save, world1)).toBe(false);
     expect(isWorldComplete(save, world0)).toBe(false);
-    expect(isAiUnlocked(save, battleAiById.get('block-baron')!)).toBe(true);
-    expect(isAiUnlocked(save, battleAiById.get('center-sentinel')!)).toBe(false);
-    expect(isAiUnlocked(save, battleAiById.get('oracle')!)).toBe(false);
 
     clearWorld(save, 'world-0');
 
     expect(isWorldComplete(save, world0)).toBe(true);
     expect(isWorldUnlocked(save, world1)).toBe(true);
     expect(isWorldUnlocked(save, world2)).toBe(false);
-    expect(isAiUnlocked(save, battleAiById.get('center-sentinel')!)).toBe(false);
 
     clearWorld(save, 'world-1');
 
     expect(isWorldUnlocked(save, world2)).toBe(true);
+  });
+
+  it('unlocks ladder opponents after the previous level is beaten', () => {
+    const save = makeSave();
+
+    expect(isAiUnlocked(save, battleAiById.get('block-baron')!)).toBe(true);
+    expect(isAiUnlocked(save, battleAiById.get('center-sentinel')!)).toBe(false);
+    expect(isAiUnlocked(save, battleAiById.get('forksmith')!)).toBe(false);
+    expect(isAiUnlocked(save, battleAiById.get('oracle')!)).toBe(false);
+
+    save.progress.clearedAiIds.push('block-baron');
     expect(isAiUnlocked(save, battleAiById.get('center-sentinel')!)).toBe(true);
+
+    save.progress.clearedAiIds.push('threat-smith');
+    expect(isAiUnlocked(save, battleAiById.get('forksmith')!)).toBe(true);
+
+    save.progress.clearedAiIds.push('endgame-engine');
+    expect(isAiUnlocked(save, battleAiById.get('oracle')!)).toBe(true);
   });
 
   it('returns the next lesson from the first unlocked incomplete world', () => {

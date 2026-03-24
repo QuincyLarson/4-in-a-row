@@ -11,6 +11,7 @@ import { useAppState } from '../../app/state/useAppState';
 import { isWorldComplete } from '../../app/progression';
 import { BoardScene } from '../board/BoardScene';
 import { GameArena } from '../battle/GameArena';
+import './lessonPlayer.css';
 
 type LessonPlayerProps = {
   lesson: LessonDef;
@@ -91,23 +92,57 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
   }
 
   const stepResolved = !!resolvedSteps[step.id];
+  const canAdvance = step.type === 'concept' || stepResolved;
+
+  function advanceLesson() {
+    if (stepIndex === lesson.steps.length - 1) {
+      finishLesson();
+      return;
+    }
+    setStepIndex((value) => value + 1);
+    setStepFeedback(null);
+  }
+
+  function showHint() {
+    setHints((value) => value + 1);
+    if (nextHint) {
+      setStepFeedback(`Hint: try column ${nextHint}.`);
+    }
+  }
 
   return (
-    <div style={lessonStyles.frame}>
-      <header style={lessonStyles.header}>
-        <div>
-          <p style={lessonStyles.eyebrow}>{world?.title ?? lesson.worldId}</p>
-          <h1 style={lessonStyles.title}>{lesson.title}</h1>
-          <p style={lessonStyles.summary}>{lesson.summary}</p>
+    <div className="lesson-player" style={lessonStyles.frame}>
+      <header className="lesson-player__header" style={lessonStyles.header}>
+        <div className="lesson-player__topline">
+          <div>
+            <p style={lessonStyles.eyebrow}>Lessons &gt; {lesson.title}</p>
+            <h1 style={lessonStyles.title}>{lesson.title}</h1>
+          </div>
+          <div style={lessonStyles.meta}>
+            <span style={lessonStyles.metaPill}>{progress}</span>
+            <span style={lessonStyles.metaPill}>{lesson.estMinutes} min</span>
+            <span style={lessonStyles.metaPill}>{stars} stars</span>
+          </div>
         </div>
         <div style={lessonStyles.meta}>
-          <span style={lessonStyles.metaPill}>{progress}</span>
-          <span style={lessonStyles.metaPill}>{lesson.estMinutes} min</span>
-          <span style={lessonStyles.metaPill}>{stars} stars</span>
+          {step.type !== 'concept' ? (
+            <button type="button" style={lessonStyles.button} onClick={showHint}>
+              Show hint
+            </button>
+          ) : null}
+          <button
+            type="button"
+            style={lessonStyles.buttonAccent}
+            disabled={!canAdvance}
+            onClick={advanceLesson}
+          >
+            {stepIndex === lesson.steps.length - 1 ? 'Finish lesson' : 'Next step'}
+          </button>
         </div>
+        {stepFeedback ? <p style={lessonStyles.feedback}>{stepFeedback}</p> : null}
       </header>
 
-      <div style={lessonStyles.grid}>
+      <div className="lesson-player__grid" style={lessonStyles.grid}>
         <div style={lessonStyles.main}>
           {step.type === 'battle' || step.type === 'boss' ? (
             <GameArena
@@ -155,16 +190,13 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
                 setStepFeedback(step.failureMessage ?? 'That move gives away the point of the position.');
               }}
               onHintUsed={() => {
-                setHints((value) => value + 1);
-                if (nextHint) {
-                  setStepFeedback(`Hint: try column ${nextHint}.`);
-                }
+                showHint();
               }}
             />
           )}
         </div>
 
-        <aside style={lessonStyles.sidebar}>
+        <aside className="lesson-player__sidebar" style={lessonStyles.sidebar}>
           <section style={lessonStyles.coachCard}>
             <h2 style={lessonStyles.panelTitle}>Coach</h2>
             <p style={lessonStyles.coachPrompt}>{step.prompt}</p>
@@ -174,42 +206,9 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
                 <p style={lessonStyles.noteBody}>{note.body}</p>
               </article>
             ))}
-            {stepFeedback ? <p style={lessonStyles.feedback}>{stepFeedback}</p> : null}
-          </section>
-
-          <section style={lessonStyles.coachCard}>
-            <h2 style={lessonStyles.panelTitle}>Lesson controls</h2>
-            <div style={lessonStyles.actions}>
-              {step.type !== 'concept' ? (
-                <button
-                  type="button"
-                  style={lessonStyles.button}
-                  onClick={() => {
-                    setHints((value) => value + 1);
-                    if (nextHint) {
-                      setStepFeedback(`Hint: the lesson points toward column ${nextHint}.`);
-                    }
-                  }}
-                >
-                  Show hint
-                </button>
-              ) : null}
-              <button
-                type="button"
-                style={lessonStyles.buttonAccent}
-                disabled={!stepResolved && step.type !== 'concept'}
-                onClick={() => {
-                  if (stepIndex === lesson.steps.length - 1) {
-                    finishLesson();
-                    return;
-                  }
-                  setStepIndex((value) => value + 1);
-                  setStepFeedback(null);
-                }}
-              >
-                {stepIndex === lesson.steps.length - 1 ? 'Finish lesson' : 'Next step'}
-              </button>
-            </div>
+            {hints > 0 && nextHint ? (
+              <p style={lessonStyles.noteBody}>Hint path: column {nextHint}.</p>
+            ) : null}
           </section>
         </aside>
       </div>
@@ -298,7 +297,7 @@ const lessonStyles = {
   },
   header: {
     display: 'grid',
-    gap: '0.8rem',
+    gap: '0.65rem',
   },
   eyebrow: {
     margin: 0,
@@ -308,13 +307,8 @@ const lessonStyles = {
     fontSize: '0.8rem',
   },
   title: {
-    margin: '0.35rem 0 0',
-    fontSize: '2rem',
-  },
-  summary: {
-    margin: '0.4rem 0 0',
-    color: 'var(--muted)',
-    lineHeight: 1.7,
+    margin: '0.3rem 0 0',
+    fontSize: '1.5rem',
   },
   meta: {
     display: 'flex',
@@ -380,12 +374,7 @@ const lessonStyles = {
   feedback: {
     margin: 0,
     color: 'var(--warning)',
-    lineHeight: 1.6,
-  },
-  actions: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '0.65rem',
+    lineHeight: 1.45,
   },
   button: {
     minHeight: '2.6rem',

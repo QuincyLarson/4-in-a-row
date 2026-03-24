@@ -1,5 +1,5 @@
 import {
-  curriculumByWorld,
+  battleAis,
   curriculumLessons,
   curriculumWorlds,
   type AiProfile,
@@ -9,17 +9,6 @@ import {
   type WorldDef,
 } from '../content';
 import type { ReviewEntry, SaveEnvelope } from '../storage/types';
-
-const AI_WORLD_GATES: Partial<Record<AiProfile['id'], WorldDef['id']>> = {
-  'center-sentinel': 'world-2',
-  'threat-smith': 'world-3',
-  forksmith: 'world-4',
-  'diagonal-djinn': 'world-5',
-  'parity-phantom': 'world-6',
-  'mirror-master': 'world-7',
-  'endgame-engine': 'world-8',
-  oracle: 'capstone',
-};
 
 export function isWorldComplete(save: SaveEnvelope, world: WorldDef) {
   const lessonsComplete = world.lessonIds.every((lessonId) =>
@@ -64,25 +53,17 @@ export function nextLessonForSave(save: SaveEnvelope): LessonDef | null {
 }
 
 export function isAiUnlocked(save: SaveEnvelope, ai: AiProfile) {
-  if (ai.role === 'warmup' || ai.id === 'block-baron') {
+  if (ai.level <= 1) {
     return true;
   }
 
   if (ai.role === 'analysis') {
-    return save.progress.bossWins.length >= 3 || save.progress.capstonePassed;
+    const previousAi = previousAiInLadder(ai.id);
+    return save.progress.capstonePassed || (previousAi ? hasAiWin(save, previousAi.id) : false);
   }
 
-  const gateWorldId = AI_WORLD_GATES[ai.id];
-  if (!gateWorldId) {
-    return true;
-  }
-
-  const gateWorld = curriculumByWorld.get(gateWorldId);
-  if (!gateWorld) {
-    return true;
-  }
-
-  return isWorldUnlocked(save, gateWorld) || isWorldComplete(save, gateWorld);
+  const previousAi = previousAiInLadder(ai.id);
+  return previousAi ? hasAiWin(save, previousAi.id) : true;
 }
 
 export function findReviewTarget(entry: ReviewEntry) {
@@ -136,4 +117,17 @@ export function reviewBuckets(entries: ReviewEntry[]) {
 
 export function lessonSummaryForStep(lesson: LessonDef, step: LessonStep) {
   return step.prompt || lesson.summary;
+}
+
+function previousAiInLadder(aiId: AiProfile['id']) {
+  const index = battleAis.findIndex((profile) => profile.id === aiId);
+  return index > 0 ? battleAis[index - 1] : null;
+}
+
+function hasAiWin(save: SaveEnvelope, aiId: AiProfile['id']) {
+  return (
+    save.progress.clearedAiIds.includes(aiId) ||
+    save.progress.bossWins.includes(aiId) ||
+    save.history.recentGames.some((game) => game.aiId === aiId && game.result === 'win')
+  );
 }

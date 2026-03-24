@@ -62,12 +62,44 @@
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.2));
 }
 
+.board-chip--latest-hole {
+  opacity: 0;
+  animation: board-chip-settle var(--drop-duration, 420ms) linear forwards;
+}
+
 .board-chip--drop-overlay {
   pointer-events: none;
 }
 
+.board-drop-motion {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateY(var(--drop-start, -220px));
+  animation: board-chip-drop var(--drop-duration, 420ms) cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 .board-impact {
   pointer-events: none;
+}
+
+.board-impact-ring,
+.board-impact-dash,
+.board-impact-core {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.board-impact-ring {
+  animation: board-impact-ring var(--impact-duration, 460ms) ease-out var(--impact-delay, 240ms) forwards;
+}
+
+.board-impact-dash {
+  animation: board-impact-dash var(--impact-duration, 460ms) ease-out var(--impact-delay, 240ms) forwards;
+}
+
+.board-impact-core {
+  animation: board-impact-core var(--impact-duration, 460ms) ease-out var(--impact-delay, 240ms) forwards;
 }
 
 .board-preview {
@@ -88,6 +120,10 @@
 
 .board-win-line {
   animation: board-win-line 360ms ease-out both;
+}
+
+.board-outcome {
+  animation: board-outcome-pop 260ms ease-out both;
 }
 
 .board-confetti rect {
@@ -136,6 +172,103 @@ body[data-motion='reduced'] .board-confetti rect {
   100% {
     opacity: 1;
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes board-chip-drop {
+  0% {
+    opacity: 1;
+    transform: translateY(var(--drop-start, -220px));
+  }
+
+  74% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  88% {
+    opacity: 1;
+    transform: translateY(var(--drop-bounce, 8px));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
+@keyframes board-chip-settle {
+  0%,
+  72% {
+    opacity: 0;
+  }
+
+  90%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes board-impact-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  18% {
+    opacity: 0.92;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes board-impact-dash {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+
+  18% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes board-impact-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  20% {
+    opacity: 0.24;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes board-outcome-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

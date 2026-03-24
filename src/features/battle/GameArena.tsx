@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   applyMove,
@@ -13,8 +14,9 @@ import {
   type MoveAnalysis,
 } from '../../core';
 import { useAppState } from '../../app/state/useAppState';
+import { isAiUnlocked } from '../../app/progression';
 import { getSfxController } from '../../audio/sfx';
-import { battleAiById } from '../../content';
+import { battleAiById, battleAis } from '../../content';
 import { BoardScene } from '../board/BoardScene';
 import { getDropDurationMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
@@ -59,6 +61,7 @@ function GameArenaSession({
   onHumanResolvedMove,
   onFinish,
 }: GameArenaProps) {
+  const navigate = useNavigate();
   const {
     state: { save },
     actions,
@@ -100,13 +103,14 @@ function GameArenaSession({
   const canUndo = board.moves.length > baseBoard.moves.length;
   const sandboxMode = mode === 'sandbox' && !aiId;
   const status = statusText(board, thinking, result, aiMeta?.name, sandboxMode);
-  const turnLabel = sandboxMode
-    ? board.turn === 'human'
-      ? 'Human side to move'
-      : 'CPU side to move'
-    : board.turn === 'human'
-      ? 'Your turn'
-      : `${aiMeta?.name ?? 'CPU'} turn`;
+  const outcomeLabel =
+    result === 'win' ? 'You win!' : result === 'loss' ? 'Try again!' : result === 'draw' ? 'Draw!' : null;
+  const nextAi = aiId ? nextLadderAi(aiId) : null;
+  const canAdvance =
+    result === 'win' &&
+    mode !== 'lesson' &&
+    nextAi !== null &&
+    isAiUnlocked(save, nextAi);
 
   useEffect(() => {
     return () => {
@@ -333,12 +337,7 @@ function GameArenaSession({
         </div>
         <div className="game-arena__meta">
           {aiMeta ? <span className="game-arena__pill">{aiMeta.name}</span> : null}
-          {hintColumn !== null ? (
-            <span className="game-arena__pill game-arena__pill--warning">
-              Hint: column {hintColumn + 1}
-            </span>
-          ) : null}
-          <span className="game-arena__pill">{turnLabel}</span>
+          {result ? <span className="game-arena__pill">{outcomeLabel}</span> : null}
         </div>
       </div>
 
@@ -383,6 +382,7 @@ function GameArenaSession({
               disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId)}
               winningLine={winningLine}
               showConfetti={result === 'win'}
+              outcomeLabel={outcomeLabel}
             />
           </div>
         </div>
@@ -390,29 +390,10 @@ function GameArenaSession({
         <aside className="game-arena__rail" aria-label="Match tools">
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
-              <h3 className="game-arena__panelTitle">Match</h3>
-              <span className="game-arena__microPill">
-                {thinking ? 'Thinking' : result ? result.toUpperCase() : 'Live'}
-              </span>
-            </div>
-            <p className="game-arena__bodyCopy">{status}</p>
-            <div className="game-arena__metaRow">
-              <span className="game-arena__microPill">{board.moves.length} plies</span>
-              <span className="game-arena__microPill">
-                {save.settings.soundEnabled ? 'Sound on' : 'Sound off'}
-              </span>
-            </div>
-          </section>
-
-          <section className="game-arena__panel">
-            <div className="game-arena__panelHeader">
               <h3 className="game-arena__panelTitle">Controls</h3>
-              <span className="game-arena__microPill">Always in view</span>
+              <span className="game-arena__microPill">Keys live</span>
             </div>
             <div className="game-arena__buttonGrid">
-              <button type="button" className="game-arena__button" onClick={requestHint}>
-                Hint
-              </button>
               <button
                 type="button"
                 className="game-arena__button"
@@ -467,34 +448,47 @@ function GameArenaSession({
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
               <h3 className="game-arena__panelTitle">Coach</h3>
-              {analysis ? (
+              {hintColumn !== null ? (
+                <span className="game-arena__microPill game-arena__microPill--accent">
+                  Hint: {hintColumn + 1}
+                </span>
+              ) : analysis ? (
                 <span className="game-arena__microPill game-arena__microPill--accent">
                   {analysis.quality}
                 </span>
               ) : null}
             </div>
-            {analysis ? (
-              <div className="game-arena__analysis">
-                <p className="game-arena__bodyCopy">{analysis.reason}</p>
-                {analysis.bestMove !== null ? (
-                  <p className="game-arena__bodyCopy">
-                    Better move: column {analysis.bestMove + 1}
-                  </p>
-                ) : null}
-              </div>
-            ) : (
+            <div className="game-arena__analysis">
               <p className="game-arena__bodyCopy">
-                {result
-                  ? result === 'win'
-                    ? 'Clean finish. Replay or climb to a tougher opponent.'
-                    : result === 'draw'
-                      ? 'Solid hold. See if you can convert the same shape next time.'
-                      : 'Use hint or review to revisit the turning point.'
-                  : thinking
-                    ? `${aiMeta?.name ?? 'CPU'} is choosing a reply.`
-                    : 'The coach labels stronger alternatives after your moves.'}
+                {coachCopy(result, thinking, analysis, aiMeta?.name)}
               </p>
-            )}
+              {analysis && analysis.bestMove !== null ? (
+                <p className="game-arena__bodyCopy">Better move: column {analysis.bestMove + 1}.</p>
+              ) : null}
+              {hintColumn !== null ? (
+                <p className="game-arena__bodyCopy">Try column {hintColumn + 1} next.</p>
+              ) : null}
+            </div>
+            <div className="game-arena__buttonGrid">
+              <button type="button" className="game-arena__button" onClick={requestHint}>
+                Show hint
+              </button>
+              {canAdvance && nextAi ? (
+                <button
+                  type="button"
+                  className="game-arena__button"
+                  onClick={() => {
+                    if (nextAi.role === 'analysis') {
+                      navigate('/sandbox');
+                    } else {
+                      navigate(`/play?ai=${nextAi.id}`);
+                    }
+                  }}
+                >
+                  {nextAi.role === 'analysis' ? 'Open Oracle' : `Next: ${nextAi.name}`}
+                </button>
+              ) : null}
+            </div>
           </section>
         </aside>
       </div>
@@ -584,4 +578,33 @@ function statusText(
   return board.turn === 'human'
     ? 'Your move. Hover, tap, or use the keyboard preview.'
     : `${aiName ?? 'CPU'} to move.`;
+}
+
+function coachCopy(
+  result: 'win' | 'loss' | 'draw' | null,
+  thinking: boolean,
+  analysis: MoveAnalysis | null,
+  aiName?: string,
+) {
+  if (result === 'win') {
+    return 'Nice. You converted the game.';
+  }
+  if (result === 'loss') {
+    return 'That line slipped. Try again or use the hint.';
+  }
+  if (result === 'draw') {
+    return 'Drawn position. Clean hold.';
+  }
+  if (thinking) {
+    return `${aiName ?? 'CPU'} is choosing a reply.`;
+  }
+  if (analysis) {
+    return analysis.reason;
+  }
+  return 'Hint when needed. Otherwise just play.';
+}
+
+function nextLadderAi(currentAiId: string) {
+  const currentIndex = battleAis.findIndex((ai) => ai.id === currentAiId);
+  return currentIndex >= 0 ? battleAis[currentIndex + 1] ?? null : null;
 }

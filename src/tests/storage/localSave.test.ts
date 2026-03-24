@@ -85,6 +85,7 @@ describe('save migration', () => {
     expect(migrated.settings.colorMode).toBe('pattern');
     expect(migrated.progress.completedLessonIds).toEqual(['world-0-board-and-gravity']);
     expect(migrated.progress.lessonStars).toEqual({ alpha: 3 });
+    expect(migrated.progress.clearedAiIds).toEqual([]);
   });
 
   it('resets unknown versions to the default save envelope', () => {
