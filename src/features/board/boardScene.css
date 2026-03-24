@@ -51,23 +51,36 @@
 }
 
 .board-scene__column.is-active {
-  background: linear-gradient(180deg, rgba(241, 190, 50, 0.12), transparent 40%);
+  background: linear-gradient(180deg, rgba(241, 190, 50, 0.18), transparent 44%);
 }
 
 .board-chip {
   transform-origin: center;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.34));
 }
 
 .board-chip.is-dropping {
-  animation: board-chip-drop var(--drop-duration, 220ms) var(--ease-out-quart) both;
+  animation: board-chip-drop var(--drop-duration, 440ms) var(--ease-out-quart) both;
 }
 
 .board-impact {
-  animation: board-impact 720ms ease-out both;
+  animation: board-impact 460ms ease-out both;
+  animation-delay: var(--impact-delay, 0ms);
   transform-origin: center;
+  opacity: 0;
 }
 
 .board-preview {
+  transition:
+    transform var(--dur-fast) var(--ease-out-quart),
+    opacity var(--dur-fast) var(--ease-out-quart);
+}
+
+.board-preview--hover {
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.4));
+}
+
+.board-preview--landing {
   transition:
     transform var(--dur-fast) var(--ease-out-quart),
     opacity var(--dur-fast) var(--ease-out-quart);
@@ -120,11 +133,15 @@ body[data-motion='reduced'] .board-confetti rect {
 
 @keyframes board-chip-drop {
   0% {
-    transform: translate3d(0, var(--drop-offset, -120px), 0) scale(0.98);
+    transform: translate3d(0, calc(var(--drop-offset, 180px) * -1), 0) scale(0.98);
+  }
+
+  70% {
+    transform: translate3d(0, 0, 0) scale(1.03);
   }
 
   86% {
-    transform: translate3d(0, 0, 0) scale(1.03);
+    transform: translate3d(0, 8px, 0) scale(0.98);
   }
 
   100% {
@@ -134,8 +151,12 @@ body[data-motion='reduced'] .board-confetti rect {
 
 @keyframes board-impact {
   0% {
-    opacity: 0.9;
+    opacity: 0;
     transform: scale(0.4);
+  }
+
+  18% {
+    opacity: 0.92;
   }
 
   100% {

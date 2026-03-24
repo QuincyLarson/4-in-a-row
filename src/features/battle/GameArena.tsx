@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 
 import {
   applyMove,
@@ -6,6 +6,7 @@ import {
   boardOutcome,
   chooseBattleMove,
   createBoard,
+  getDropRow,
   legalMoves,
   winningLinesFor,
   type BoardState,
@@ -15,6 +16,7 @@ import { useAppState } from '../../app/state/useAppState';
 import { getSfxController } from '../../audio/sfx';
 import { battleAiById } from '../../content';
 import { BoardScene } from '../board/BoardScene';
+import { getDropDurationMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
 
 type GameArenaProps = {
@@ -76,6 +78,8 @@ function GameArenaSession({
   );
   const [analysis, setAnalysis] = useState<MoveAnalysis | null>(null);
   const finishedRef = useRef(false);
+  const soundTimeoutsRef = useRef<number[]>([]);
+  const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
   const activePreview = nearestPlayable(board, previewColumn ?? 3);
@@ -92,6 +96,12 @@ function GameArenaSession({
     board.winner !== null ? winningLinesFor(board, board.winner)[0] ?? null : null;
   const canUndo = board.moves.length > baseBoard.moves.length;
   const sandboxMode = mode === 'sandbox' && !aiId;
+
+  useEffect(() => {
+    return () => {
+      clearQueuedSounds(soundTimeoutsRef);
+    };
+  }, []);
 
   useEffect(() => {
     if (result === null || finishedRef.current) {
@@ -131,19 +141,28 @@ function GameArenaSession({
           return;
         }
         const column = move.column;
-        const delay = save.settings.cpuMoveSpeed === 'snappy' ? 140 : 0;
+        const baseDelay = save.settings.cpuMoveSpeed === 'snappy' ? 90 : 170;
+        const waitForLanding = Math.max(0, cpuReadyAtRef.current - Date.now());
+        const delay = Math.max(baseDelay, waitForLanding);
         window.setTimeout(() => {
           if (cancelled) {
             return;
           }
+          const landingRow = getDropRow(board, column) ?? 0;
+          const landingDelay = getDropDurationMs(
+            landingRow,
+            save.settings.reducedMotion,
+          );
+          if (save.settings.soundEnabled) {
+            void sfx.cpuMove();
+            queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
+          }
+          cpuReadyAtRef.current = 0;
           const next = applyMove(board, column);
           setBoard(next);
           setHintColumn(null);
           setThinking(false);
           setPreviewColumn(nearestPlayable(next, column));
-          if (save.settings.soundEnabled) {
-            void sfx.cpuMove();
-          }
         }, delay);
       })
       .catch(() => {
@@ -161,6 +180,7 @@ function GameArenaSession({
     board,
     outcome,
     save.settings.cpuMoveSpeed,
+    save.settings.reducedMotion,
     save.settings.soundEnabled,
     sfx,
   ]);
@@ -171,6 +191,12 @@ function GameArenaSession({
     }
 
     const boardBefore = board;
+    const landingRow = getDropRow(board, column) ?? 0;
+    const landingDelay = getDropDurationMs(
+      landingRow,
+      save.settings.reducedMotion,
+    );
+    cpuReadyAtRef.current = Date.now() + landingDelay + 28;
     const nextBoard = applyMove(board, column);
     setBoard(nextBoard);
     setHintColumn(null);
@@ -181,6 +207,7 @@ function GameArenaSession({
 
     if (save.settings.soundEnabled) {
       void sfx.humanMove();
+      queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
     }
 
     if (!aiId) {
@@ -202,12 +229,18 @@ function GameArenaSession({
     if (thinking || board.turn !== 'cpu' || !legalMoves(board).includes(column)) {
       return;
     }
+    const landingRow = getDropRow(board, column) ?? 0;
+    const landingDelay = getDropDurationMs(
+      landingRow,
+      save.settings.reducedMotion,
+    );
     const nextBoard = applyMove(board, column);
     setBoard(nextBoard);
     setHintColumn(null);
     setPreviewColumn(nearestPlayable(nextBoard, column));
     if (save.settings.soundEnabled) {
       void sfx.cpuMove();
+      queueSound(soundTimeoutsRef, () => void sfx.land(), landingDelay);
     }
   }
 
@@ -231,6 +264,8 @@ function GameArenaSession({
   }
 
   function resetBoard() {
+    clearQueuedSounds(soundTimeoutsRef);
+    cpuReadyAtRef.current = 0;
     setBoard(baseBoard);
     setPreviewColumn(nearestPlayable(baseBoard, 3));
     setHintColumn(null);
@@ -243,6 +278,8 @@ function GameArenaSession({
     if (!canUndo) {
       return;
     }
+    clearQueuedSounds(soundTimeoutsRef);
+    cpuReadyAtRef.current = 0;
     const trim = aiId ? 2 : 1;
     const nextMoves = board.moves.slice(
       0,
@@ -396,6 +433,23 @@ function boardFromZeroBasedMoves(moves: number[]) {
     board = applyMove(board, move);
   }
   return board;
+}
+
+function queueSound(
+  timeoutsRef: MutableRefObject<number[]>,
+  cb: () => void,
+  delayMs: number,
+) {
+  const timeoutId = window.setTimeout(() => {
+    timeoutsRef.current = timeoutsRef.current.filter((entry) => entry !== timeoutId);
+    cb();
+  }, delayMs);
+  timeoutsRef.current.push(timeoutId);
+}
+
+function clearQueuedSounds(timeoutsRef: MutableRefObject<number[]>) {
+  timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  timeoutsRef.current = [];
 }
 
 function statusText(

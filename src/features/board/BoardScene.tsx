@@ -10,6 +10,11 @@ import {
   type BoardState,
   type WinningLine,
 } from '../../core';
+import {
+  getDropDurationMs,
+  getDropOffsetPx,
+  getImpactDelayMs,
+} from './motion';
 import './boardScene.css';
 
 const GRID = {
@@ -21,6 +26,8 @@ const GRID = {
   boardHeight: 680,
   chipRadius: 30,
 };
+
+const HOVER_CHIP_Y = 46;
 
 type BoardSceneProps = {
   board: BoardState;
@@ -60,11 +67,7 @@ export function BoardScene({
   const defsId = useId().replace(/:/g, '-');
   const dropRow =
     lastMoveColumn !== null && board.moves.length > 0
-      ? Math.max(
-          0,
-          board.moves.filter((move, index) => move === lastMoveColumn && index <= board.moves.length - 1)
-            .length - 1,
-        )
+      ? lastOccupiedRow(board, lastMoveColumn)
       : null;
   const previewRow =
     previewColumn !== null ? getDropRow(board, previewColumn) : null;
@@ -113,12 +116,14 @@ export function BoardScene({
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
             </linearGradient>
             <radialGradient id={`${defsId}-human`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#f7d36a" />
-              <stop offset="100%" stopColor="#f1be32" />
+              <stop offset="0%" stopColor="#fff1b8" />
+              <stop offset="56%" stopColor="#f7d36a" />
+              <stop offset="100%" stopColor="#d99a00" />
             </radialGradient>
             <radialGradient id={`${defsId}-cpu`} cx="35%" cy="30%" r="70%">
-              <stop offset="0%" stopColor="#d5e9ff" />
-              <stop offset="100%" stopColor="#99c9ff" />
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="52%" stopColor="#b9dcff" />
+              <stop offset="100%" stopColor="#4e78ff" />
             </radialGradient>
             <mask id={`${defsId}-holes`}>
               <rect width="100%" height="100%" fill="white" />
@@ -137,29 +142,6 @@ export function BoardScene({
               })}
             </mask>
           </defs>
-
-          {previewColumn !== null && legal.has(previewColumn) ? (
-            <g
-              className="board-preview"
-              transform={`translate(${columnX(previewColumn)} ${Math.max(40, columnY(previewRow ?? 0) - 72)})`}
-              opacity={disabled ? 0.4 : 1}
-            >
-              <circle
-                r="30"
-                fill={`url(#${board.turn === 'human' ? `${defsId}-human` : `${defsId}-cpu`})`}
-                opacity="0.4"
-              />
-              <circle r="36" fill="none" stroke="#f1be32" strokeWidth="4" />
-              <circle
-                r="27"
-                fill="none"
-                stroke="#f5f6f7"
-                strokeOpacity="0.72"
-                strokeWidth="2"
-                strokeDasharray="6 6"
-              />
-            </g>
-          ) : null}
 
           {Array.from({ length: COLS }).map((_, col) =>
             Array.from({ length: ROWS }).map((_, row) => {
@@ -180,8 +162,8 @@ export function BoardScene({
                   style={
                     isLatest
                       ? ({
-                          '--drop-offset': `${Math.max(120, 520 - row * 50)}px`,
-                          '--drop-duration': `${180 + (ROWS - row) * 16}ms`,
+                          '--drop-offset': `${getDropOffsetPx(row)}px`,
+                          '--drop-duration': `${getDropDurationMs(row)}ms`,
                         } as CSSProperties)
                       : undefined
                   }
@@ -242,13 +224,67 @@ export function BoardScene({
                     r="34"
                     fill="none"
                     stroke="#f5f6f7"
-                    strokeOpacity="0.18"
-                    strokeWidth="2"
+                    strokeOpacity="0.24"
+                    strokeWidth="2.5"
                   />
                 </g>
               )),
             )}
           </g>
+
+          {previewColumn !== null && legal.has(previewColumn) && previewRow !== null ? (
+            <g
+              className="board-preview board-preview--landing"
+              transform={`translate(${columnX(previewColumn)} ${columnY(previewRow)})`}
+              opacity={disabled ? 0.45 : 1}
+            >
+              <circle r="31" fill="none" stroke="#f5f6f7" strokeOpacity="0.2" strokeWidth="4" />
+              <circle
+                r="26"
+                fill="none"
+                stroke={board.turn === 'human' ? '#f1be32' : '#99c9ff'}
+                strokeOpacity="0.92"
+                strokeWidth="4"
+                strokeDasharray="6 6"
+              />
+              <circle
+                r="8"
+                fill={board.turn === 'human' ? '#f1be32' : '#99c9ff'}
+                fillOpacity="0.8"
+              />
+            </g>
+          ) : null}
+
+          {previewColumn !== null && legal.has(previewColumn) ? (
+            <g
+              className="board-preview board-preview--hover"
+              transform={`translate(${columnX(previewColumn)} ${HOVER_CHIP_Y})`}
+              opacity={disabled ? 0.62 : 1}
+            >
+              {board.turn === 'human' ? (
+                <HumanChip defsId={defsId} preview />
+              ) : (
+                <CpuChip defsId={defsId} preview />
+              )}
+              <path
+                d="M 0 42 V 58"
+                fill="none"
+                stroke="#f5f6f7"
+                strokeOpacity="0.74"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              <path
+                d="M -8 54 L 0 64 L 8 54"
+                fill="none"
+                stroke="#f5f6f7"
+                strokeOpacity="0.74"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </g>
+          ) : null}
 
           {winningLine ? (
             <line
@@ -269,8 +305,13 @@ export function BoardScene({
             <g
               className="board-impact"
               transform={`translate(${columnX(lastMoveColumn)} ${columnY(dropRow)})`}
+              style={
+                {
+                  '--impact-delay': `${getImpactDelayMs(dropRow)}ms`,
+                } as CSSProperties
+              }
             >
-              <circle r="28" fill="none" stroke="#71f7d5" strokeWidth="4" />
+              <circle r="28" fill="none" stroke="#acd157" strokeWidth="4" />
               <circle
                 r="28"
                 fill="none"
@@ -279,6 +320,7 @@ export function BoardScene({
                 strokeWidth="2"
                 strokeDasharray="5 5"
               />
+              <circle r="10" fill="#0a0a23" fillOpacity="0.15" />
             </g>
           ) : null}
 
@@ -319,41 +361,75 @@ export function BoardScene({
   );
 }
 
-function HumanChip({ defsId }: { defsId: string }) {
+function HumanChip({ defsId, preview = false }: { defsId: string; preview?: boolean }) {
   return (
     <>
       <circle r={GRID.chipRadius} fill={`url(#${defsId}-human)`} />
-      <circle r={GRID.chipRadius} fill="none" stroke="#f5f6f7" strokeOpacity="0.22" strokeWidth="2" />
-      <circle r="22" fill="none" stroke="#0a0a23" strokeOpacity="0.28" strokeWidth="2" />
+      <circle
+        r={GRID.chipRadius}
+        fill="none"
+        stroke="#fff7d6"
+        strokeOpacity={preview ? '0.95' : '0.82'}
+        strokeWidth="3"
+      />
+      <circle
+        r="26"
+        fill="none"
+        stroke="#6b4b07"
+        strokeOpacity="0.9"
+        strokeWidth="2.5"
+      />
+      <circle r="21" fill="none" stroke="#0a0a23" strokeOpacity="0.38" strokeWidth="2.5" />
       <path
         d="M-16 10 L-1 -12"
-        stroke="#0a0a23"
-        strokeOpacity="var(--human-pattern-opacity, 0.55)"
+        stroke="#5c3f04"
+        strokeOpacity="var(--human-pattern-opacity, 0.82)"
         strokeWidth="6"
         strokeLinecap="round"
       />
       <path
         d="M0 16 L15 -6"
         stroke="#0a0a23"
-        strokeOpacity="0.72"
+        strokeOpacity="0.9"
         strokeWidth="6"
         strokeLinecap="round"
       />
+      <circle cx="-10" cy="-11" r="5" fill="#fff7d6" fillOpacity="0.55" />
     </>
   );
 }
 
-function CpuChip({ defsId }: { defsId: string }) {
+function CpuChip({ defsId, preview = false }: { defsId: string; preview?: boolean }) {
   return (
     <>
       <circle r={GRID.chipRadius} fill={`url(#${defsId}-cpu)`} />
-      <circle r={GRID.chipRadius} fill="none" stroke="#f5f6f7" strokeOpacity="0.2" strokeWidth="2" />
-      <circle r="21" fill="none" stroke="#0a0a23" strokeOpacity="var(--cpu-pattern-opacity, 0.25)" strokeWidth="2.5" />
-      <circle r="5.5" fill="#0a0a23" fillOpacity="0.68" />
-      <circle cy="-14" r="3.5" fill="#0a0a23" fillOpacity="0.5" />
-      <circle cx="-14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
-      <circle cx="14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
-      <circle cy="14" r="3.2" fill="#0a0a23" fillOpacity="0.45" />
+      <circle
+        r={GRID.chipRadius}
+        fill="none"
+        stroke="#f5fbff"
+        strokeOpacity={preview ? '0.98' : '0.9'}
+        strokeWidth="3"
+      />
+      <circle
+        r="24"
+        fill="none"
+        stroke="#0d2454"
+        strokeOpacity="0.82"
+        strokeWidth="2.5"
+      />
+      <circle
+        r="20.5"
+        fill="none"
+        stroke="#f5fbff"
+        strokeOpacity="var(--cpu-pattern-opacity, 0.84)"
+        strokeWidth="2.5"
+      />
+      <circle r="5.5" fill="#0d2454" fillOpacity="0.88" />
+      <circle cy="-14" r="3.5" fill="#0d2454" fillOpacity="0.72" />
+      <circle cx="-14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
+      <circle cx="14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
+      <circle cy="14" r="3.2" fill="#0d2454" fillOpacity="0.68" />
+      <circle cx="-10" cy="-11" r="5" fill="#ffffff" fillOpacity="0.5" />
     </>
   );
 }
@@ -371,6 +447,14 @@ function pieceMove(x: number, y: number) {
     '--x': `${x}px`,
     '--y': `${y}px`,
   } as CSSProperties;
+}
+
+function lastOccupiedRow(board: BoardState, column: number) {
+  let row = 0;
+  while (row < ROWS && cellOwner(board, column, row) !== null) {
+    row += 1;
+  }
+  return Math.max(0, row - 1);
 }
 
 const boardSceneStyles = {

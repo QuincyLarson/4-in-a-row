@@ -26,6 +26,29 @@ export class SfxController {
     });
   }
 
+  async land() {
+    await Promise.all([
+      this.synth.playTone({
+        frequency: 176,
+        sweepTo: 132,
+        durationMs: 72,
+        attackMs: 2,
+        releaseMs: 64,
+        volume: 0.045,
+        type: 'triangle',
+      }),
+      this.synth.playTone({
+        frequency: 112,
+        sweepTo: 88,
+        durationMs: 86,
+        attackMs: 2,
+        releaseMs: 76,
+        volume: 0.032,
+        type: 'sine',
+      }),
+    ]);
+  }
+
   async uiConfirm() {
     await this.synth.playTone({
       frequency: 740,
