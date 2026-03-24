@@ -50,6 +50,12 @@ type BoardSceneProps = {
   lastMoveColumn?: number | null;
   winningLine?: WinningLine | null;
   outcomeLabel?: string | null;
+  outcomeActions?: Array<{
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+    variant?: 'primary' | 'secondary';
+  }>;
 };
 
 export function BoardScene({
@@ -71,6 +77,7 @@ export function BoardScene({
   lastMoveColumn = board.moves.at(-1) ?? null,
   winningLine,
   outcomeLabel = null,
+  outcomeActions = [],
 }: BoardSceneProps) {
   const frameRef = useRef<HTMLDivElement | null>(null);
   const defsId = useId().replace(/:/g, '-');
@@ -397,35 +404,6 @@ export function BoardScene({
             </g>
           ) : null}
 
-          {outcomeLabel ? (
-            <g transform="translate(390 338)">
-              <g className="board-outcome">
-                <rect
-                  x="-146"
-                  y="-42"
-                  width="292"
-                  height="84"
-                  rx="24"
-                  fill="#0a0a23"
-                  fillOpacity="0.92"
-                  stroke="#f5f6f7"
-                  strokeOpacity="0.26"
-                  strokeWidth="2"
-                />
-                <text
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="#ffffff"
-                  fontSize="32"
-                  fontWeight="700"
-                  letterSpacing="0.04em"
-                >
-                  {outcomeLabel}
-                </text>
-              </g>
-            </g>
-          ) : null}
-
           {showConfetti ? (
             <g className="board-confetti" transform="translate(390 72)">
               <rect x="-4" y="-10" width="8" height="16" rx="2" fill="#FF8A5B" style={pieceMove(0, -56)} />
@@ -462,6 +440,33 @@ export function BoardScene({
             />
           ))}
         </div>
+
+        {outcomeLabel ? (
+          <div className="board-scene__outcomeOverlay">
+            <div className="board-scene__outcomeCard board-outcome">
+              <p className="board-scene__outcomeLabel">{outcomeLabel}</p>
+              {outcomeActions.length > 0 ? (
+                <div className="board-scene__outcomeActions">
+                  {outcomeActions.map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      className={`board-scene__outcomeButton${
+                        action.variant === 'secondary'
+                          ? ' board-scene__outcomeButton--secondary'
+                          : ''
+                      }`}
+                      disabled={action.disabled}
+                      onClick={action.onClick}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

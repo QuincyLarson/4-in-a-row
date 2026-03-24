@@ -96,10 +96,12 @@ describe('BoardScene', () => {
         previewColumn={3}
         status="Won board"
         outcomeLabel="You win!"
+        outcomeActions={[{ label: 'Replay', onClick: vi.fn() }]}
       />,
     );
 
     expect(screen.getByText('You win!')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Replay' })).toBeInTheDocument();
   });
 });
 
@@ -154,11 +156,11 @@ describe('GameArena', () => {
     expect(screen.getByRole('complementary', { name: 'Match tools' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Controls' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Coach' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Moves' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Drop (Enter)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Hint (H)' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reset (R)' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show hint' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Next: ' })).not.toBeInTheDocument();
   });
 
   it('shows the cpu reply as a visible dropping chip before the next human turn', async () => {
@@ -179,5 +181,61 @@ describe('GameArena', () => {
     });
 
     expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
+  });
+
+  it('resets immediately after a finished game with the reset hotkey', async () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena title="Sandbox" description="Manual board" mode="sandbox" />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    const sequence = [1, 7, 2, 7, 3, 7, 4];
+    for (const column of sequence) {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: `Drop in column ${column}` }));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(900);
+      });
+    }
+
+    expect(screen.getByText('You win!')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Replay' })).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'r' });
+    });
+
+    expect(screen.queryByText('You win!')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Replay move 1: A1' })).not.toBeInTheDocument();
+  });
+
+  it('replays earlier positions from the move log on hover', async () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena title="Sandbox" description="Manual board" mode="sandbox" />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(900);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 5' }));
+    });
+
+    const firstMove = screen.getByRole('button', { name: 'Replay move 1: D1' });
+    fireEvent.mouseEnter(firstMove);
+    expect(screen.getByRole('group', { name: 'Replay move 1: D1.' })).toBeInTheDocument();
+    fireEvent.mouseLeave(firstMove);
+    expect(screen.getByRole('group', { name: /to move|Your move|CPU/ })).toBeInTheDocument();
   });
 });

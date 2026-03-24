@@ -41,6 +41,68 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
+.board-scene__outcomeOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.board-scene__outcomeCard {
+  display: grid;
+  gap: 0.8rem;
+  justify-items: center;
+  min-width: min(100%, 18rem);
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(245, 246, 247, 0.18);
+  border-radius: 1rem;
+  background: rgba(10, 10, 35, 0.94);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+}
+
+.board-scene__outcomeLabel {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.board-scene__outcomeActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.board-scene__outcomeButton {
+  min-height: 2.5rem;
+  padding: 0.68rem 1rem;
+  border: 1px solid rgba(241, 190, 50, 0.35);
+  border-radius: 0.8rem;
+  background: #f1be32;
+  color: #0a0a23;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.board-scene__outcomeButton--secondary {
+  border-color: rgba(245, 246, 247, 0.14);
+  background: rgba(245, 246, 247, 0.08);
+  color: #fff;
+}
+
+.board-scene__outcomeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .board-scene__column {
   appearance: none;
   border: 0;

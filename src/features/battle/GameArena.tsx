@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import {
   applyMove,
   boardFromHumanMoves,
   boardOutcome,
   chooseBattleMove,
+  cloneBoard,
   createBoard,
   getDropRow,
   legalMoves,
@@ -14,7 +16,7 @@ import {
 } from '../../core';
 import { useAppState } from '../../app/state/useAppState';
 import { getSfxController } from '../../audio/sfx';
-import { battleAiById } from '../../content';
+import { battleAiById, battleAis } from '../../content';
 import { BoardScene } from '../board/BoardScene';
 import { getDropDurationMs, getImpactDelayMs } from '../board/motion';
 import { requestBattleMove, requestMoveAnalysis } from './aiClient';
@@ -28,6 +30,19 @@ type GameArenaProps = {
   mode?: 'play' | 'battle' | 'sandbox' | 'lesson';
   onHumanResolvedMove?: (column: number, analysis: MoveAnalysis | null) => void;
   onFinish?: (result: 'win' | 'loss' | 'draw', board: BoardState) => void;
+};
+
+type MoveLogEntry = {
+  turnNumber: number;
+  side: 'human' | 'cpu';
+  sessionPly: number;
+  label: string;
+};
+
+type MoveLogRow = {
+  turnNumber: number;
+  human?: MoveLogEntry;
+  cpu?: MoveLogEntry;
 };
 
 const AI_ID_TO_LEVEL: Record<string, number> = {
@@ -59,6 +74,7 @@ function GameArenaSession({
   onHumanResolvedMove,
   onFinish,
 }: GameArenaProps) {
+  const navigate = useNavigate();
   const {
     state: { save },
     actions,
@@ -79,12 +95,20 @@ function GameArenaSession({
   );
   const [analysis, setAnalysis] = useState<MoveAnalysis | null>(null);
   const [previewVisible, setPreviewVisible] = useState(true);
+  const [replayPly, setReplayPly] = useState<number | null>(null);
   const finishedRef = useRef(false);
   const soundTimeoutsRef = useRef<number[]>([]);
   const previewTimeoutRef = useRef<number | null>(null);
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
+  const sessionMoves = board.moves.slice(baseBoard.moves.length);
+  const moveLog = useMemo(() => buildMoveLog(baseBoard, sessionMoves), [baseBoard, sessionMoves]);
+  const replayEntry =
+    replayPly !== null ? moveLog.find((entry) => entry.sessionPly === replayPly) ?? null : null;
+  const replayBoard =
+    replayPly !== null ? boardFromSessionReplay(baseBoard, sessionMoves, replayPly) : null;
+  const displayBoard = replayBoard ?? board;
   const activePreview = nearestPlayable(board, previewColumn ?? 3);
   const outcome = boardOutcome(board);
   const result =
@@ -96,13 +120,29 @@ function GameArenaSession({
           ? 'win'
           : 'loss';
   const winningLine =
-    board.winner !== null ? winningLinesFor(board, board.winner)[0] ?? null : null;
+    displayBoard.winner !== null
+      ? winningLinesFor(displayBoard, displayBoard.winner)[0] ?? null
+      : null;
   const canUndo = board.moves.length > baseBoard.moves.length;
   const sandboxMode = mode === 'sandbox' && !aiId;
-  const status = statusText(board, thinking, result, aiMeta?.name, sandboxMode);
+  const status = replayEntry
+    ? `Replay move ${replayEntry.sessionPly}: ${replayEntry.label}.`
+    : statusText(board, thinking, result, aiMeta?.name, sandboxMode);
   const outcomeLabel =
     result === 'win' ? 'You win!' : result === 'loss' ? 'Try again!' : result === 'draw' ? 'Draw!' : null;
-  const canDrop = Boolean(activePreview !== null && previewVisible && !thinking);
+  const nextAi = aiId ? nextLadderAi(aiId) : null;
+  const canAdvance = result === 'win' && nextAi !== null && mode !== 'lesson';
+  const controlsDisabled = replayPly !== null;
+  const canDrop = Boolean(
+    !controlsDisabled &&
+      activePreview !== null &&
+      previewVisible &&
+      !thinking &&
+      result === null &&
+      ((board.turn === 'human' && legalMoves(board).includes(activePreview)) ||
+        (sandboxMode && board.turn === 'cpu' && legalMoves(board).includes(activePreview))),
+  );
+  const canHint = Boolean(!controlsDisabled && result === null && !thinking && board.turn === 'human');
 
   useEffect(() => {
     return () => {
@@ -171,6 +211,7 @@ function GameArenaSession({
             queueSound(soundTimeoutsRef, () => void sfx.land(), impactDelay);
           }
           cpuReadyAtRef.current = 0;
+          setReplayPly(null);
           const next = applyMove(board, column);
           setBoard(next);
           setHintColumn(null);
@@ -203,6 +244,7 @@ function GameArenaSession({
       return;
     }
 
+    setReplayPly(null);
     const boardBefore = board;
     const landingRow = getDropRow(board, column) ?? 0;
     const landingDelay = getDropDurationMs(
@@ -247,6 +289,7 @@ function GameArenaSession({
     if (!previewVisible || thinking || board.turn !== 'cpu' || !legalMoves(board).includes(column)) {
       return;
     }
+    setReplayPly(null);
     const landingRow = getDropRow(board, column) ?? 0;
     const landingDelay = getDropDurationMs(
       landingRow,
@@ -279,6 +322,9 @@ function GameArenaSession({
   }
 
   function requestHint() {
+    if (result !== null || replayPly !== null || thinking || board.turn !== 'human') {
+      return;
+    }
     const move = chooseBattleMove(board, AI_ID_TO_LEVEL[aiId ?? 'center-sentinel'] ?? 2);
     setHintColumn(move.column);
     if (save.settings.soundEnabled) {
@@ -295,6 +341,7 @@ function GameArenaSession({
     setPreviewColumn(nearestPlayable(baseBoard, 3));
     setHintColumn(null);
     setAnalysis(null);
+    setReplayPly(null);
     setThinking(Boolean(aiId && baseBoard.turn === 'cpu' && boardOutcome(baseBoard) === 'playing'));
     finishedRef.current = false;
   }
@@ -316,20 +363,13 @@ function GameArenaSession({
     setBoard(reconstructed);
     setPreviewVisible(true);
     setPreviewColumn(nearestPlayable(reconstructed, activePreview ?? 3));
+    setHintColumn(null);
     setAnalysis(null);
+    setReplayPly(null);
     setThinking(
       Boolean(aiId && reconstructed.turn === 'cpu' && boardOutcome(reconstructed) === 'playing'),
     );
     finishedRef.current = false;
-  }
-
-  function confirmResetBoard() {
-    if (
-      !window.confirm('Reset the current board? This clears the current position and move history.')
-    ) {
-      return;
-    }
-    resetBoard();
   }
 
   function dropPreview() {
@@ -343,16 +383,20 @@ function GameArenaSession({
     }
   }
 
+  function goToNextLevel() {
+    if (!nextAi) {
+      return;
+    }
+    setReplayPly(null);
+    navigate(`/play?ai=${nextAi.id}`);
+  }
+
   return (
     <div className="game-arena">
       <div className="game-arena__masthead">
         <div className="game-arena__copy">
           <h2 className="game-arena__title">{title}</h2>
-          <p className="game-arena__description">{description}</p>
-        </div>
-        <div className="game-arena__meta">
-          {aiMeta ? <span className="game-arena__pill">{aiMeta.name}</span> : null}
-          {result ? <span className="game-arena__pill">{outcomeLabel}</span> : null}
+          {description ? <p className="game-arena__description">{description}</p> : null}
         </div>
       </div>
 
@@ -360,13 +404,18 @@ function GameArenaSession({
         <div className="game-arena__boardColumn">
           <div className="game-arena__boardWrap">
             <BoardScene
-              board={board}
+              board={displayBoard}
               previewColumn={hintColumn ?? activePreview}
               reducedMotion={save.settings.reducedMotion}
               showPreview={
-                previewVisible && (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
+                replayPly === null &&
+                previewVisible &&
+                (sandboxMode || !aiId || (!thinking && board.turn === 'human'))
               }
               onHoverColumn={(column) => {
+                if (replayPly !== null) {
+                  return;
+                }
                 if (column !== null) {
                   setPreviewColumn(column);
                 }
@@ -390,14 +439,24 @@ function GameArenaSession({
                 }
               }}
               onHint={requestHint}
-              onRestart={confirmResetBoard}
+              onRestart={resetBoard}
               onUndo={undoMove}
               onToggleMute={() => actions.setSound(!save.settings.soundEnabled)}
               status={status}
-              disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId)}
+              disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId) || replayPly !== null}
               winningLine={winningLine}
-              showConfetti={result === 'win'}
-              outcomeLabel={outcomeLabel}
+              showConfetti={result === 'win' && replayPly === null}
+              outcomeLabel={replayPly === null ? outcomeLabel : null}
+              outcomeActions={
+                replayPly === null && result
+                  ? [
+                      { label: 'Replay', onClick: resetBoard, variant: 'secondary' as const },
+                      ...(result === 'win' && canAdvance
+                        ? [{ label: 'Next level', onClick: goToNextLevel }]
+                        : []),
+                    ]
+                  : []
+              }
             />
           </div>
         </div>
@@ -419,6 +478,7 @@ function GameArenaSession({
               <button
                 type="button"
                 className="game-arena__button"
+                disabled={!canHint}
                 onClick={requestHint}
               >
                 Hint (H)
@@ -426,45 +486,84 @@ function GameArenaSession({
               <button
                 type="button"
                 className="game-arena__button game-arena__button--danger"
-                onClick={confirmResetBoard}
+                onClick={resetBoard}
               >
                 Reset (R)
               </button>
+            </div>
+            <div className="game-arena__utilityRow">
               <button
                 type="button"
-                className="game-arena__button"
-                disabled={!canUndo}
+                className="game-arena__textButton"
+                disabled={!canUndo || controlsDisabled}
                 onClick={undoMove}
               >
                 Undo (U)
               </button>
               <button
                 type="button"
-                className="game-arena__button"
+                className="game-arena__textButton"
                 onClick={() => actions.setSound(!save.settings.soundEnabled)}
               >
-                Sound (M)
+                {save.settings.soundEnabled ? 'Mute (M)' : 'Sound on (M)'}
               </button>
             </div>
           </section>
 
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
-              {analysis ? (
-                <span className="game-arena__coachQuality">{analysis.quality}</span>
-              ) : null}
-              <h3 className="game-arena__panelTitle">Coach</h3>
+              <div className="game-arena__coachHeader">
+                {analysis ? (
+                  <span className={`game-arena__coachQuality game-arena__coachQuality--${analysisTone(analysis)}`}>
+                    {analysisToneLabel(analysis)}
+                  </span>
+                ) : null}
+                <h3 className="game-arena__panelTitle">Coach</h3>
+              </div>
             </div>
             <div className="game-arena__analysis">
               <p className="game-arena__bodyCopy">
-                {coachCopy(result, thinking, analysis, aiMeta?.name)}
+                {coachCopy(result, thinking, analysis, hintColumn, aiMeta?.name)}
               </p>
-              {analysis && analysis.bestMove !== null ? (
-                <p className="game-arena__bodyCopy">Better move: column {analysis.bestMove + 1}.</p>
-              ) : null}
-              {hintColumn !== null ? (
-                <p className="game-arena__bodyCopy">Try column {hintColumn + 1} next.</p>
-              ) : null}
+            </div>
+          </section>
+
+          <section className="game-arena__panel">
+            <div className="game-arena__panelHeader">
+              <h3 className="game-arena__panelTitle">Moves</h3>
+            </div>
+            <div className="game-arena__moveList" aria-label="Move log">
+              {moveLog.length === 0 ? (
+                <p className="game-arena__bodyCopy">Moves appear here.</p>
+              ) : (
+                moveRows(moveLog).map((row) => (
+                  <div key={row.turnNumber} className="game-arena__moveRow">
+                    <span className="game-arena__moveNumber">{row.turnNumber}.</span>
+                    {(['human', 'cpu'] as const).map((side) =>
+                      row[side] ? (
+                        <button
+                          key={`${row.turnNumber}-${side}`}
+                          type="button"
+                          className={`game-arena__moveButton${
+                            replayPly === row[side]?.sessionPly ? ' is-active' : ''
+                          }`}
+                          onMouseEnter={() => setReplayPly(row[side]?.sessionPly ?? null)}
+                          onMouseLeave={() => setReplayPly(null)}
+                          onFocus={() => setReplayPly(row[side]?.sessionPly ?? null)}
+                          onBlur={() => setReplayPly(null)}
+                          aria-label={`Replay move ${row[side]?.sessionPly}: ${row[side]?.label}`}
+                        >
+                          {row[side]?.label}
+                        </button>
+                      ) : (
+                        <span key={`${row.turnNumber}-${side}`} className="game-arena__moveGap">
+                          ...
+                        </span>
+                      ),
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </aside>
@@ -489,6 +588,52 @@ function boardFromZeroBasedMoves(moves: number[]) {
     board = applyMove(board, move);
   }
   return board;
+}
+
+function boardFromSessionReplay(baseBoard: BoardState, sessionMoves: number[], ply: number) {
+  let replayBoard = cloneBoard(baseBoard);
+  for (const move of sessionMoves.slice(0, ply)) {
+    replayBoard = applyMove(replayBoard, move);
+  }
+  return replayBoard;
+}
+
+function buildMoveLog(baseBoard: BoardState, sessionMoves: number[]) {
+  let replayBoard = cloneBoard(baseBoard);
+  const entries: MoveLogEntry[] = [];
+
+  sessionMoves.forEach((move, index) => {
+    const row = (getDropRow(replayBoard, move) ?? 0) + 1;
+    const side = replayBoard.turn;
+    const turnNumber = Math.floor(replayBoard.moves.length / 2) + 1;
+    entries.push({
+      turnNumber,
+      side,
+      sessionPly: index + 1,
+      label: `${columnLetter(move)}${row}`,
+    });
+    replayBoard = applyMove(replayBoard, move);
+  });
+
+  return entries;
+}
+
+function moveRows(entries: MoveLogEntry[]): MoveLogRow[] {
+  const rows: MoveLogRow[] = [];
+
+  for (const entry of entries) {
+    const lastRow = rows.at(-1);
+    if (!lastRow || lastRow.turnNumber !== entry.turnNumber) {
+      rows.push({
+        turnNumber: entry.turnNumber,
+        [entry.side]: entry,
+      });
+      continue;
+    }
+    lastRow[entry.side] = entry;
+  }
+
+  return rows;
 }
 
 function queueSound(
@@ -536,24 +681,24 @@ function statusText(
   sandboxMode?: boolean,
 ) {
   if (result === 'win') {
-    return 'You won. Confetti is live, and the board is ready for another run.';
+    return 'You won.';
   }
   if (result === 'loss') {
-    return `${aiName ?? 'CPU'} converted the position. Replay with the coach and inspect the turning point.`;
+    return `${aiName ?? 'CPU'} won.`;
   }
   if (result === 'draw') {
-    return 'Draw. Strong defensive hold.';
+    return 'Draw.';
   }
   if (thinking) {
     return `${aiName ?? 'CPU'} is thinking.`;
   }
   if (sandboxMode) {
     return board.turn === 'human'
-      ? 'Human to move. Use the board to test a line.'
-      : 'CPU side to move. This sandbox lets you drive both sides.';
+      ? 'Human to move.'
+      : 'CPU side to move.';
   }
   return board.turn === 'human'
-    ? 'Your move. Hover, tap, or use the keyboard preview.'
+    ? 'Your move.'
     : `${aiName ?? 'CPU'} to move.`;
 }
 
@@ -561,22 +706,54 @@ function coachCopy(
   result: 'win' | 'loss' | 'draw' | null,
   thinking: boolean,
   analysis: MoveAnalysis | null,
+  hintColumn: number | null,
   aiName?: string,
 ) {
+  if (hintColumn !== null) {
+    return `Try column ${hintColumn + 1}.`;
+  }
   if (result === 'win') {
-    return 'Nice. You converted the game.';
+    return 'Clean finish.';
   }
   if (result === 'loss') {
-    return 'That line slipped. Try again or use the hint.';
+    return 'That line slipped. Replay it and try again.';
   }
   if (result === 'draw') {
-    return 'Drawn position. Clean hold.';
+    return 'Solid hold.';
   }
   if (thinking) {
-    return `${aiName ?? 'CPU'} is choosing a reply.`;
+    return `${aiName ?? 'CPU'} is choosing.`;
   }
   if (analysis) {
-    return analysis.reason;
+    return analysis.bestMove !== null
+      ? `${analysis.reason} Better: column ${analysis.bestMove + 1}.`
+      : analysis.reason;
   }
-  return 'Hint when needed. Otherwise just play.';
+  return 'Play the board. Hint only when stuck.';
+}
+
+function analysisTone(analysis: MoveAnalysis): 'best' | 'good' | 'bad' {
+  return analysis.quality === 'best'
+    ? 'best'
+    : analysis.quality === 'good'
+      ? 'good'
+      : 'bad';
+}
+
+function analysisToneLabel(analysis: MoveAnalysis) {
+  return analysisTone(analysis) === 'bad'
+    ? 'Bad'
+    : analysisTone(analysis) === 'good'
+      ? 'Good'
+      : 'Best';
+}
+
+function nextLadderAi(currentAiId: string) {
+  const playableAis = battleAis.filter((ai) => ai.role !== 'analysis');
+  const currentIndex = playableAis.findIndex((ai) => ai.id === currentAiId);
+  return currentIndex >= 0 ? playableAis[currentIndex + 1] ?? null : null;
+}
+
+function columnLetter(column: number) {
+  return String.fromCharCode(65 + column);
 }
