@@ -74,8 +74,8 @@ describe('app routes', () => {
 
     renderRoute('/lesson/world-0-board-and-gravity');
 
-    await screen.findByRole('heading', { name: 'The board and gravity' });
-    expect(screen.getAllByText('Lessons > The board and gravity').length).toBeGreaterThan(0);
+    await screen.findByRole('heading', { name: 'Board and Gravity - Lesson 1 of 3' });
+    expect(screen.queryByText('Lessons > Board and Gravity')).not.toBeInTheDocument();
     expect(document.title).toBe('Lesson - Learn Drop 4');
     expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toContain(
       'board-first lesson',
@@ -177,7 +177,7 @@ describe('app routes', () => {
   it('renders the learn, about, credits, sandbox, and strategy surfaces', async () => {
     renderRoute('/learn');
     await screen.findByRole('heading', {
-      name: 'A full path from first move to near-perfect practical play.',
+      name: 'A full curriculum from first move to near-perfect practical play.',
     });
     expect(screen.getByText('Zero to First Move')).toBeInTheDocument();
 

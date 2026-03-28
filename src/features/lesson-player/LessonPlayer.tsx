@@ -40,8 +40,6 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
   const navigate = useNavigate();
   const { state, actions } = useAppState();
   const world = curriculumByWorld.get(lesson.worldId);
-  const lessonNumber = Math.max(1, world?.lessonIds.indexOf(lesson.id) ?? 0) + 1;
-  const totalLessons = world?.lessonIds.length ?? 1;
   const [stepIndex, setStepIndex] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
@@ -50,19 +48,14 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
   const [overlay, setOverlay] = useState<LessonOverlay>(null);
   const timeoutsRef = useRef<number[]>([]);
   const step = lesson.steps[stepIndex];
+  const lessonNumber = stepIndex + 1;
+  const totalLessons = lesson.steps.length;
   const usesArena = step.type === 'battle' || step.type === 'boss';
   const stars = Math.max(1, 3 - Math.floor(mistakes / 2) - (hintsUsed > 0 ? 1 : 0));
 
   useEffect(() => {
     return () => clearTimeouts(timeoutsRef);
   }, []);
-
-  useEffect(() => {
-    setCoachStatus(null);
-    setCoachHint(null);
-    setOverlay(null);
-    clearTimeouts(timeoutsRef);
-  }, [step.id]);
 
   function queueStepReview(currentStep: LessonStep) {
     const dueAt = new Date(Date.now() + 60_000).toISOString();
@@ -119,7 +112,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 
     if (stepIndex === lesson.steps.length - 1) {
       finishLessonProgress();
-      setCoachStatus('Lesson complete.');
+      setCoachStatus(null);
       setOverlay({ kind: 'complete', visibleStars: 0 });
       [100, 200, 300].forEach((delay, index) => {
         queueTimeout(timeoutsRef, () => {
@@ -130,7 +123,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
       return;
     }
 
-    setCoachStatus(step.successMessage ?? 'Correct. Moving on.');
+    setCoachStatus(null);
     setOverlay({ kind: 'correct' });
     queueTimeout(timeoutsRef, () => {
       setOverlay(null);
@@ -156,7 +149,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     }
     setHintsUsed((value) => value + 1);
     setCoachHint(hint);
-    setCoachStatus(`Hint: try column ${hint}.`);
+    setCoachStatus(`Try column ${hint}.`);
   }
 
   return (
@@ -212,15 +205,14 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 
               <div className="lesson-player__coachState" aria-live="polite">
                 <p className="lesson-player__coachStatus">
-                  {coachStatus ?? 'Play the board. Feedback stays here.'}
+                  {coachStatus ??
+                    (step.type === 'concept'
+                      ? 'Make the move that fits the idea.'
+                      : 'Make one move.')}
                 </p>
                 {coachHint ? (
                   <p className="lesson-player__coachHint">Hint: column {coachHint}.</p>
-                ) : (
-                  <p className="lesson-player__coachHint lesson-player__coachHint--muted">
-                    No hint yet.
-                  </p>
-                )}
+                ) : null}
               </div>
 
               {step.coachNotes?.map((note: CoachNote) => (
@@ -265,14 +257,6 @@ function LessonChallenge({
     () => acceptedColumnsForStep(step, startingBoard),
     [startingBoard, step],
   );
-
-  useEffect(() => {
-    setBoard(startingBoard);
-    setPreview(nearestPlayable(startingBoard, 3));
-    setHintColumn(null);
-    setLocked(false);
-    clearTimeouts(timeoutsRef);
-  }, [startingBoard, step.id]);
 
   useEffect(() => {
     return () => clearTimeouts(timeoutsRef);

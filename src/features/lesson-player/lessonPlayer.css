@@ -70,7 +70,7 @@
 .lesson-player__coachState {
   display: grid;
   gap: 0.35rem;
-  min-height: 5.25rem;
+  min-height: 4.5rem;
   padding: 0.75rem;
   border-radius: 0.9rem;
   background: rgba(10, 10, 35, 0.72);
@@ -83,10 +83,6 @@
 
 .lesson-player__coachHint {
   color: var(--warning);
-}
-
-.lesson-player__coachHint--muted {
-  color: rgba(245, 246, 247, 0.42);
 }
 
 .lesson-player__note {

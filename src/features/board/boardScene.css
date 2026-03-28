@@ -126,7 +126,8 @@
 
 .board-chip--latest-hole {
   opacity: 0;
-  animation: board-chip-settle var(--drop-duration, 420ms) ease-out forwards;
+  will-change: opacity;
+  animation: board-chip-settle var(--drop-duration, 420ms) linear forwards;
 }
 
 .board-chip--drop-overlay {
@@ -136,8 +137,9 @@
 .board-drop-motion {
   transform-box: fill-box;
   transform-origin: center;
+  will-change: transform, opacity;
   transform: translateY(var(--drop-start, -220px));
-  animation: board-chip-drop var(--drop-duration, 420ms) cubic-bezier(0.18, 0.82, 0.28, 1) forwards;
+  animation: board-chip-drop var(--drop-duration, 420ms) cubic-bezier(0.16, 0.76, 0.24, 1) forwards;
 }
 
 .board-impact {
@@ -240,37 +242,46 @@ body[data-motion='reduced'] .board-confetti rect {
 @keyframes board-chip-drop {
   0% {
     opacity: 1;
-    transform: translateY(var(--drop-start, -220px)) scale(1);
+    transform: translateY(var(--drop-start, -220px));
   }
 
-  88% {
+  76% {
     opacity: 1;
-    transform: translateY(var(--drop-overshoot, 6px)) scale(1.02, 0.98);
+    transform: translateY(0);
   }
 
-  95% {
-    opacity: 0.98;
-    transform: translateY(calc(var(--drop-rebound, 2px) * -1)) scale(1.005, 0.995);
+  86% {
+    opacity: 1;
+    transform: translateY(var(--drop-overshoot, 6px));
+  }
+
+  94% {
+    opacity: 1;
+    transform: translateY(calc(var(--drop-rebound, 2px) * -1));
   }
 
   100% {
     opacity: 0;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes board-chip-settle {
   0%,
-  78% {
+  60% {
     opacity: 0;
   }
 
-  90% {
-    opacity: 0.46;
+  74% {
+    opacity: 0.22;
   }
 
-  96% {
-    opacity: 0.8;
+  86% {
+    opacity: 0.7;
+  }
+
+  94% {
+    opacity: 0.9;
   }
 
   100% {

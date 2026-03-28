@@ -1,8 +1,8 @@
 import { ROWS } from '../../core';
 
 export function getDropDurationMs(rowFromBottom: number, reducedMotion = false) {
-  const duration = 400 + (ROWS - rowFromBottom) * 48;
-  return reducedMotion ? Math.max(160, Math.round(duration * 0.5)) : duration;
+  const duration = 430 + (ROWS - rowFromBottom) * 52;
+  return reducedMotion ? Math.max(180, Math.round(duration * 0.55)) : duration;
 }
 
 export function getDropOffsetPx(rowFromBottom: number) {
@@ -13,17 +13,17 @@ export function getDropOvershootPx(rowFromBottom: number, reducedMotion = false)
   if (reducedMotion) {
     return 0;
   }
-  return Math.max(2, 6 - Math.floor(rowFromBottom / 2));
+  return Math.max(2, 5 - Math.floor(rowFromBottom / 2));
 }
 
 export function getDropReboundPx(rowFromBottom: number, reducedMotion = false) {
   if (reducedMotion) {
     return 0;
   }
-  return Math.max(1, Math.round(getDropOvershootPx(rowFromBottom) * 0.35));
+  return Math.max(1, Math.round(getDropOvershootPx(rowFromBottom) * 0.45));
 }
 
 export function getImpactDelayMs(rowFromBottom: number, reducedMotion = false) {
   const duration = getDropDurationMs(rowFromBottom, reducedMotion);
-  return reducedMotion ? Math.max(40, duration - 20) : Math.max(80, Math.round(duration * 0.88));
+  return reducedMotion ? Math.max(40, duration - 24) : Math.max(80, Math.round(duration * 0.84));
 }

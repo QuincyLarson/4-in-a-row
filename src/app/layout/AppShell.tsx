@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { curriculumByLesson, strategyArticleBySlug } from '../../content';
+import { strategyArticleBySlug } from '../../content';
 
 const navItems = [
   { to: '/', label: 'Home' },
@@ -140,10 +140,10 @@ function breadcrumbForPath(pathname: string) {
     return 'Home';
   }
   if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
-    return 'Lessons';
+    return 'Learn';
   }
   if (pathname.startsWith('/lesson/')) {
-    return 'Lessons';
+    return 'Learn';
   }
   if (pathname === '/play' || pathname === '/play/connect-4-online') {
     return 'Play';
