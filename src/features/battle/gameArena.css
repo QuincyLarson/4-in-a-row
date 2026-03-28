@@ -4,6 +4,11 @@
   --board-max-width: 100%;
 }
 
+.game-arena--lesson {
+  gap: 0.75rem;
+  --board-max-width: 33rem;
+}
+
 .game-arena__masthead {
   display: flex;
   flex-wrap: wrap;
@@ -46,6 +51,10 @@
   width: 100%;
   max-width: 40.5rem;
   margin-inline: auto;
+}
+
+.game-arena--lesson .game-arena__boardWrap {
+  max-width: 33rem;
 }
 
 .game-arena__rail {
@@ -221,8 +230,16 @@
     --board-max-width: 40.5rem;
   }
 
+  .game-arena--lesson {
+    --board-max-width: 33rem;
+  }
+
   .game-arena__shell {
     grid-template-columns: minmax(0, 1fr) 18rem;
+  }
+
+  .game-arena--lesson .game-arena__shell {
+    grid-template-columns: minmax(0, 33rem) 16rem;
   }
 
   .game-arena__boardWrap {

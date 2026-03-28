@@ -1,8 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { boardFromHumanMoves, chooseBattleMove, legalMoves } from '../../core';
+import {
+  applyMove,
+  boardFromHumanMoves,
+  chooseBattleMove,
+  createBoard,
+  getDropRow,
+  legalMoves,
+  type BoardState,
+} from '../../core';
 import {
   curriculumByWorld,
+  curriculumLessons,
   type CoachNote,
   type LessonDef,
   type LessonStep,
@@ -10,6 +20,7 @@ import {
 import { useAppState } from '../../app/state/useAppState';
 import { isWorldComplete } from '../../app/progression';
 import { BoardScene } from '../board/BoardScene';
+import { getDropDurationMs } from '../board/motion';
 import { GameArena } from '../battle/GameArena';
 import './lessonPlayer.css';
 
@@ -17,35 +28,41 @@ type LessonPlayerProps = {
   lesson: LessonDef;
 };
 
+type LessonOverlay =
+  | { kind: 'correct' }
+  | { kind: 'complete'; visibleStars: number }
+  | null;
+
+const STEP_SUCCESS_MS = 1_000;
+const LESSON_COMPLETE_MS = 900;
+
 export function LessonPlayer({ lesson }: LessonPlayerProps) {
+  const navigate = useNavigate();
   const { state, actions } = useAppState();
   const world = curriculumByWorld.get(lesson.worldId);
+  const lessonNumber = Math.max(1, world?.lessonIds.indexOf(lesson.id) ?? 0) + 1;
+  const totalLessons = world?.lessonIds.length ?? 1;
   const [stepIndex, setStepIndex] = useState(0);
   const [mistakes, setMistakes] = useState(0);
-  const [hints, setHints] = useState(0);
-  const [resolvedSteps, setResolvedSteps] = useState<Record<string, boolean>>({});
-  const [stepFeedback, setStepFeedback] = useState<string | null>(null);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [coachStatus, setCoachStatus] = useState<string | null>(null);
+  const [coachHint, setCoachHint] = useState<number | null>(null);
+  const [overlay, setOverlay] = useState<LessonOverlay>(null);
+  const timeoutsRef = useRef<number[]>([]);
   const step = lesson.steps[stepIndex];
-  const progress = `${stepIndex + 1} / ${lesson.steps.length}`;
-  const stars = Math.max(1, 3 - Math.floor(mistakes / 2) - (hints > 0 ? 1 : 0));
+  const usesArena = step.type === 'battle' || step.type === 'boss';
+  const stars = Math.max(1, 3 - Math.floor(mistakes / 2) - (hintsUsed > 0 ? 1 : 0));
 
-  const authoredBoard = useMemo(() => {
-    if (!step.position) {
-      return null;
-    }
-    return boardFromHumanMoves(step.position.moves, 'human');
-  }, [step.position]);
+  useEffect(() => {
+    return () => clearTimeouts(timeoutsRef);
+  }, []);
 
-  const nextHint =
-    step.hintColumns?.[0] ??
-    (authoredBoard ? chooseBattleMove(authoredBoard, 2).column ?? undefined : undefined);
-
-  function markResolved(currentStep: LessonStep, success = true) {
-    setResolvedSteps((previous) => ({ ...previous, [currentStep.id]: true }));
-    if (!success) {
-      setMistakes((value) => value + 1);
-    }
-  }
+  useEffect(() => {
+    setCoachStatus(null);
+    setCoachHint(null);
+    setOverlay(null);
+    clearTimeouts(timeoutsRef);
+  }, [step.id]);
 
   function queueStepReview(currentStep: LessonStep) {
     const dueAt = new Date(Date.now() + 60_000).toISOString();
@@ -61,15 +78,15 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     });
   }
 
-  function finishLesson() {
+  function finishLessonProgress() {
     const conceptScores = Object.fromEntries(
-      lesson.tags.map((tag: LessonDef['tags'][number]) => [
+      lesson.tags.map((tag) => [
         tag,
         Math.max(10, (state.save.progress.conceptScores[tag] ?? 0) + stars * 6),
       ]),
     );
     actions.completeLesson(lesson.id, stars, conceptScores);
-    lesson.unlocks?.forEach((unlock: string) => actions.unlockWorld(unlock));
+    lesson.unlocks?.forEach((unlock) => actions.unlockWorld(unlock));
     if (world) {
       const projectedSave = {
         ...state.save,
@@ -85,66 +102,74 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
         (world.lessonIds.every((lessonId) => projectedSave.progress.completedLessonIds.includes(lessonId)) &&
           (state.save.progress.bossWins.includes(world.bossAiId) || lesson.bossAiId === world.bossAiId))
       ) {
-        world.unlocks.forEach((unlock: string) => actions.unlockWorld(unlock));
+        world.unlocks.forEach((unlock) => actions.unlockWorld(unlock));
       }
     }
-    setStepFeedback(`Lesson complete. ${stars} star${stars === 1 ? '' : 's'} earned.`);
   }
 
-  const stepResolved = !!resolvedSteps[step.id];
-  const canAdvance = step.type === 'concept' || stepResolved;
+  function continueToNextSection() {
+    const lessonIndex = curriculumLessons.findIndex((item) => item.id === lesson.id);
+    const nextLesson = lessonIndex >= 0 ? curriculumLessons[lessonIndex + 1] ?? null : null;
+    navigate(nextLesson ? `/lesson/${nextLesson.id}` : '/learn');
+  }
 
-  function advanceLesson() {
+  function handleCorrect() {
+    clearTimeouts(timeoutsRef);
+    setCoachHint(null);
+
     if (stepIndex === lesson.steps.length - 1) {
-      finishLesson();
+      finishLessonProgress();
+      setCoachStatus('Lesson complete.');
+      setOverlay({ kind: 'complete', visibleStars: 0 });
+      [100, 200, 300].forEach((delay, index) => {
+        queueTimeout(timeoutsRef, () => {
+          setOverlay({ kind: 'complete', visibleStars: index + 1 });
+        }, delay);
+      });
+      queueTimeout(timeoutsRef, continueToNextSection, LESSON_COMPLETE_MS);
       return;
     }
-    setStepIndex((value) => value + 1);
-    setStepFeedback(null);
+
+    setCoachStatus(step.successMessage ?? 'Correct. Moving on.');
+    setOverlay({ kind: 'correct' });
+    queueTimeout(timeoutsRef, () => {
+      setOverlay(null);
+      setStepIndex((value) => value + 1);
+    }, STEP_SUCCESS_MS);
   }
 
-  function showHint() {
-    setHints((value) => value + 1);
-    if (nextHint) {
-      setStepFeedback(`Hint: try column ${nextHint}.`);
+  function handleWrong() {
+    const hint = lessonHintColumn(step);
+    setMistakes((value) => value + 1);
+    queueStepReview(step);
+    setCoachHint(hint);
+    setCoachStatus(
+      step.failureMessage ??
+        (hint ? `Not quite. Try column ${hint}.` : 'Not quite. Try again.'),
+    );
+  }
+
+  function handleHint() {
+    const hint = lessonHintColumn(step);
+    if (!hint) {
+      return;
     }
+    setHintsUsed((value) => value + 1);
+    setCoachHint(hint);
+    setCoachStatus(`Hint: try column ${hint}.`);
   }
 
   return (
-    <div className="lesson-player" style={lessonStyles.frame}>
-      <header className="lesson-player__header" style={lessonStyles.header}>
-        <div className="lesson-player__topline">
-          <div>
-            <p style={lessonStyles.eyebrow}>Lessons &gt; {lesson.title}</p>
-            <h1 style={lessonStyles.title}>{lesson.title}</h1>
-          </div>
-          <div style={lessonStyles.meta}>
-            <span style={lessonStyles.metaPill}>{progress}</span>
-            <span style={lessonStyles.metaPill}>{lesson.estMinutes} min</span>
-            <span style={lessonStyles.metaPill}>{stars} stars</span>
-          </div>
-        </div>
-        <div style={lessonStyles.meta}>
-          {step.type !== 'concept' ? (
-            <button type="button" style={lessonStyles.button} onClick={showHint}>
-              Show hint
-            </button>
-          ) : null}
-          <button
-            type="button"
-            style={lessonStyles.buttonAccent}
-            disabled={!canAdvance}
-            onClick={advanceLesson}
-          >
-            {stepIndex === lesson.steps.length - 1 ? 'Finish lesson' : 'Next step'}
-          </button>
-        </div>
-        {stepFeedback ? <p style={lessonStyles.feedback}>{stepFeedback}</p> : null}
+    <div className="lesson-player">
+      <header className="lesson-player__header">
+        <h1 className="lesson-player__title">
+          {lesson.title} - Lesson {lessonNumber} of {totalLessons}
+        </h1>
       </header>
 
-      <div className="lesson-player__grid" style={lessonStyles.grid}>
-        <div style={lessonStyles.main}>
-          {step.type === 'battle' || step.type === 'boss' ? (
+      {usesArena ? (
+        <div className="lesson-player__arenaShell">
+          <div className="lesson-player__boardShell">
             <GameArena
               key={step.id}
               aiId={lesson.bossAiId ?? world?.bossAiId}
@@ -154,64 +179,60 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
               description={step.prompt}
               onFinish={(result) => {
                 if (result === 'loss') {
-                  setMistakes((value) => value + 1);
-                  queueStepReview(step);
-                  setStepFeedback(step.failureMessage ?? 'That run gave away the key idea. Try again.');
+                  handleWrong();
                   return;
                 }
-                markResolved(step);
-                setStepFeedback(step.successMessage ?? 'Strong clear. Move on when you are ready.');
+                handleCorrect();
               }}
             />
-          ) : step.type === 'concept' ? (
-            <div style={lessonStyles.staticBoard}>
-              {authoredBoard ? (
-                <BoardScene
-                  board={authoredBoard}
-                  previewColumn={null}
-                  reducedMotion={state.save.settings.reducedMotion}
-                  status={step.prompt}
-                  disabled
-                />
-              ) : null}
-            </div>
-          ) : (
-            <LessonChallenge
-              key={step.id}
-              step={step}
-              reducedMotion={state.save.settings.reducedMotion}
-              onCorrect={() => {
-                markResolved(step);
-                setStepFeedback(step.successMessage ?? 'Good. You matched the lesson idea.');
-              }}
-              onWrong={() => {
-                setMistakes((value) => value + 1);
-                queueStepReview(step);
-                setStepFeedback(step.failureMessage ?? 'That move gives away the point of the position.');
-              }}
-              onHintUsed={() => {
-                showHint();
-              }}
-            />
-          )}
+            <LessonOverlayView overlay={overlay} />
+          </div>
         </div>
+      ) : (
+        <div className="lesson-player__grid">
+          <div className="lesson-player__main">
+            <div className="lesson-player__boardShell">
+              <LessonChallenge
+                key={step.id}
+                step={step}
+                reducedMotion={state.save.settings.reducedMotion}
+                disabled={overlay !== null}
+                onCorrect={handleCorrect}
+                onWrong={handleWrong}
+                onHint={handleHint}
+              />
+              <LessonOverlayView overlay={overlay} />
+            </div>
+          </div>
 
-        <aside className="lesson-player__sidebar" style={lessonStyles.sidebar}>
-          <section style={lessonStyles.coachCard}>
-            <h2 style={lessonStyles.panelTitle}>Coach</h2>
-            <p style={lessonStyles.coachPrompt}>{step.prompt}</p>
-            {step.coachNotes?.map((note: CoachNote) => (
-              <article key={note.id} style={lessonStyles.note}>
-                <strong style={lessonStyles.noteTitle}>{note.title}</strong>
-                <p style={lessonStyles.noteBody}>{note.body}</p>
-              </article>
-            ))}
-            {hints > 0 && nextHint ? (
-              <p style={lessonStyles.noteBody}>Hint path: column {nextHint}.</p>
-            ) : null}
-          </section>
-        </aside>
-      </div>
+          <aside className="lesson-player__sidebar">
+            <section className="lesson-player__coachCard">
+              <h2 className="lesson-player__coachTitle">Coach</h2>
+              <p className="lesson-player__prompt">{step.prompt}</p>
+
+              <div className="lesson-player__coachState" aria-live="polite">
+                <p className="lesson-player__coachStatus">
+                  {coachStatus ?? 'Play the board. Feedback stays here.'}
+                </p>
+                {coachHint ? (
+                  <p className="lesson-player__coachHint">Hint: column {coachHint}.</p>
+                ) : (
+                  <p className="lesson-player__coachHint lesson-player__coachHint--muted">
+                    No hint yet.
+                  </p>
+                )}
+              </div>
+
+              {step.coachNotes?.map((note: CoachNote) => (
+                <article key={note.id} className="lesson-player__note">
+                  <strong className="lesson-player__noteTitle">{note.title}</strong>
+                  <p className="lesson-player__noteBody">{note.body}</p>
+                </article>
+              ))}
+            </section>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
@@ -219,177 +240,188 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 function LessonChallenge({
   step,
   reducedMotion,
+  disabled,
   onCorrect,
   onWrong,
-  onHintUsed,
+  onHint,
 }: {
   step: LessonStep;
   reducedMotion: boolean;
+  disabled: boolean;
   onCorrect: () => void;
   onWrong: () => void;
-  onHintUsed: () => void;
+  onHint: () => void;
 }) {
-  const board = useMemo(
-    () => (step.position ? boardFromHumanMoves(step.position.moves, 'human') : null),
+  const startingBoard = useMemo(
+    () => (step.position ? boardFromHumanMoves(step.position.moves, 'human') : createBoard('human')),
     [step.position],
   );
-  const [preview, setPreview] = useState<number | null>(3);
+  const [board, setBoard] = useState<BoardState>(startingBoard);
+  const [preview, setPreview] = useState<number | null>(nearestPlayable(startingBoard, 3));
   const [hintColumn, setHintColumn] = useState<number | null>(null);
+  const [locked, setLocked] = useState(false);
+  const timeoutsRef = useRef<number[]>([]);
+  const acceptedColumns = useMemo(
+    () => acceptedColumnsForStep(step, startingBoard),
+    [startingBoard, step],
+  );
 
-  if (!board) {
-    return null;
+  useEffect(() => {
+    setBoard(startingBoard);
+    setPreview(nearestPlayable(startingBoard, 3));
+    setHintColumn(null);
+    setLocked(false);
+    clearTimeouts(timeoutsRef);
+  }, [startingBoard, step.id]);
+
+  useEffect(() => {
+    return () => clearTimeouts(timeoutsRef);
+  }, []);
+
+  function resolveColumn(column: number) {
+    if (disabled || locked || !legalMoves(board).includes(column)) {
+      return;
+    }
+
+    const landingRow = getDropRow(board, column) ?? 0;
+    const landingDelay = getDropDurationMs(landingRow, reducedMotion);
+    const nextBoard = applyMove(board, column);
+    const isCorrect = acceptedColumns.includes(column + 1);
+
+    setLocked(true);
+    setHintColumn(null);
+    setBoard(nextBoard);
+    setPreview(column);
+
+    queueTimeout(timeoutsRef, () => {
+      if (isCorrect) {
+        onCorrect();
+        return;
+      }
+
+      onWrong();
+      queueTimeout(timeoutsRef, () => {
+        setBoard(startingBoard);
+        setPreview(nearestPlayable(startingBoard, column));
+        setLocked(false);
+      }, 260);
+    }, landingDelay + 40);
   }
 
   return (
-    <BoardScene
-      board={board}
-      previewColumn={hintColumn ?? preview}
-      reducedMotion={reducedMotion}
-      onHoverColumn={(column) => {
-        if (column !== null) {
-          setPreview(column);
-        }
-      }}
-      onSelectColumn={(column) => {
-        const correct = step.acceptedColumns?.includes(column + 1) ?? false;
-        if (correct) {
-          onCorrect();
-        } else {
-          onWrong();
-        }
-      }}
-      onMovePreview={(direction) => {
-        const legal = legalMoves(board);
-        if (legal.length === 0) {
-          return;
-        }
-        const current = preview ?? legal[0];
-        const index = legal.indexOf(current);
-        const nextIndex = (index + direction + legal.length) % legal.length;
-        setPreview(legal[nextIndex]);
-      }}
-      onPrimaryAction={() => {
-        if (preview !== null) {
-          const correct = step.acceptedColumns?.includes(preview + 1) ?? false;
-          if (correct) {
-            onCorrect();
-          } else {
-            onWrong();
+    <div className="lesson-player__boardStage">
+      <BoardScene
+        board={board}
+        previewColumn={hintColumn ?? preview}
+        reducedMotion={reducedMotion}
+        onHoverColumn={(column) => {
+          if (column !== null) {
+            setPreview(column);
           }
-        }
-      }}
-      onHint={() => {
-        const hint = step.hintColumns?.[0];
-        if (hint) {
-          setHintColumn(hint - 1);
-        }
-        onHintUsed();
-      }}
-      status={step.prompt}
-    />
+        }}
+        onSelectColumn={resolveColumn}
+        onMovePreview={(direction) => {
+          const legal = legalMoves(board);
+          if (legal.length === 0) {
+            return;
+          }
+          const current = preview ?? legal[0];
+          const index = legal.indexOf(current);
+          const nextIndex = (index + direction + legal.length) % legal.length;
+          setPreview(legal[nextIndex]);
+        }}
+        onPrimaryAction={() => {
+          if (preview !== null) {
+            resolveColumn(preview);
+          }
+        }}
+        onHint={() => {
+          const hint = lessonHintColumn(step);
+          if (hint) {
+            setHintColumn(hint - 1);
+          }
+          onHint();
+        }}
+        status={step.prompt}
+        disabled={disabled || locked}
+      />
+    </div>
   );
 }
 
-const lessonStyles = {
-  frame: {
-    display: 'grid',
-    gap: '1.5rem',
-  },
-  header: {
-    display: 'grid',
-    gap: '0.65rem',
-  },
-  eyebrow: {
-    margin: 0,
-    color: 'var(--accent)',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.18em',
-    fontSize: '0.8rem',
-  },
-  title: {
-    margin: '0.3rem 0 0',
-    fontSize: '1.5rem',
-  },
-  meta: {
-    display: 'flex',
-    gap: '0.65rem',
-    flexWrap: 'wrap' as const,
-  },
-  metaPill: {
-    display: 'inline-flex',
-    padding: '0.35rem 0.75rem',
-    borderRadius: '999px',
-    background: 'rgba(127, 219, 255, 0.08)',
-    color: 'var(--accent-2)',
-  },
-  grid: {
-    display: 'grid',
-    gap: '1rem',
-    gridTemplateColumns: '1fr',
-  },
-  main: {
-    display: 'grid',
-    gap: '1rem',
-  },
-  staticBoard: {
-    padding: '1rem',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--surface)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-  },
-  sidebar: {
-    display: 'grid',
-    gap: '1rem',
-    alignContent: 'start',
-  },
-  coachCard: {
-    display: 'grid',
-    gap: '0.85rem',
-    padding: '1rem',
-    borderRadius: 'var(--radius-md)',
-    background: 'var(--surface)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-  },
-  panelTitle: {
-    margin: 0,
-    fontSize: '1rem',
-  },
-  coachPrompt: {
-    margin: 0,
-    color: 'var(--muted)',
-    lineHeight: 1.7,
-  },
-  note: {
-    display: 'grid',
-    gap: '0.3rem',
-  },
-  noteTitle: {
-    color: 'var(--accent)',
-  },
-  noteBody: {
-    margin: 0,
-    color: 'var(--muted)',
-    lineHeight: 1.7,
-  },
-  feedback: {
-    margin: 0,
-    color: 'var(--warning)',
-    lineHeight: 1.45,
-  },
-  button: {
-    minHeight: '2.6rem',
-    padding: '0.7rem 1rem',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid rgba(245, 246, 247, 0.12)',
-    background: 'var(--bg-1)',
-    color: 'var(--ink)',
-  },
-  buttonAccent: {
-    minHeight: '2.6rem',
-    padding: '0.7rem 1rem',
-    borderRadius: 'var(--radius-sm)',
-    border: '1px solid rgba(241, 190, 50, 0.9)',
-    background: 'var(--accent)',
-    color: '#0a0a23',
-  },
-};
+function LessonOverlayView({ overlay }: { overlay: LessonOverlay }) {
+  if (!overlay) {
+    return null;
+  }
+
+  if (overlay.kind === 'complete') {
+    return (
+      <div className="lesson-player__overlay">
+        <div className="lesson-player__overlayCard lesson-player__overlayCard--complete">
+          <p className="lesson-player__overlayLabel">Lesson complete</p>
+          <div className="lesson-player__stars" aria-hidden="true">
+            {[0, 1, 2].map((index) => (
+              <span
+                key={index}
+                className={`lesson-player__star${
+                  overlay.visibleStars > index ? ' is-visible' : ''
+                }`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="lesson-player__overlay">
+      <p className="lesson-player__floatText">Correct!</p>
+    </div>
+  );
+}
+
+function acceptedColumnsForStep(step: LessonStep, board: BoardState) {
+  if (step.acceptedColumns && step.acceptedColumns.length > 0) {
+    return step.acceptedColumns;
+  }
+  if (step.hintColumns && step.hintColumns.length > 0) {
+    return step.hintColumns;
+  }
+  const best = chooseBattleMove(board, 2).column;
+  return [best === null ? 4 : best + 1];
+}
+
+function lessonHintColumn(step: LessonStep) {
+  if (step.hintColumns && step.hintColumns.length > 0) {
+    return step.hintColumns[0];
+  }
+  const board = step.position ? boardFromHumanMoves(step.position.moves, 'human') : createBoard('human');
+  const best = chooseBattleMove(board, 2).column;
+  return best === null ? 4 : best + 1;
+}
+
+function nearestPlayable(board: BoardState, preferred: number) {
+  const moves = legalMoves(board);
+  if (moves.length === 0) {
+    return null;
+  }
+  return moves.reduce((best, move) =>
+    Math.abs(move - preferred) < Math.abs(best - preferred) ? move : best,
+  );
+}
+
+function queueTimeout(ref: MutableRefObject<number[]>, cb: () => void, delayMs: number) {
+  const timeoutId = window.setTimeout(() => {
+    ref.current = ref.current.filter((entry) => entry !== timeoutId);
+    cb();
+  }, delayMs);
+  ref.current.push(timeoutId);
+}
+
+function clearTimeouts(ref: MutableRefObject<number[]>) {
+  ref.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+  ref.current = [];
+}

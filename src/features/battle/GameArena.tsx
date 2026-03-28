@@ -392,13 +392,15 @@ function GameArenaSession({
   }
 
   return (
-    <div className="game-arena">
-      <div className="game-arena__masthead">
-        <div className="game-arena__copy">
-          <h2 className="game-arena__title">{title}</h2>
-          {description ? <p className="game-arena__description">{description}</p> : null}
+    <div className={`game-arena${mode === 'lesson' ? ' game-arena--lesson' : ''}`}>
+      {mode !== 'lesson' ? (
+        <div className="game-arena__masthead">
+          <div className="game-arena__copy">
+            <h2 className="game-arena__title">{title}</h2>
+            {description ? <p className="game-arena__description">{description}</p> : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="game-arena__shell">
         <div className="game-arena__boardColumn">

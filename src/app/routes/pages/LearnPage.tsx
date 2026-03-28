@@ -12,9 +12,7 @@ export function LearnPage() {
 
   return (
     <PageSection
-      eyebrow="Curriculum"
-      title="A full path from first move to near-perfect practical play."
-      body="Each world is short, board-first, and focused on one idea at a time. Lessons link into practice, boss battles, and the review queue."
+      title="A full curriculum from first move to near-perfect practical play."
     >
       <CardGrid>
         {curriculumWorlds.map((world) => {
@@ -45,7 +43,6 @@ export function LearnPage() {
                 </>
               }
             >
-              <p style={learn.goal}>{world.goal}</p>
               <div style={learn.lessonList}>
                 {lessons.map((lesson) => (
                   <Link
@@ -71,11 +68,6 @@ export function LearnPage() {
 }
 
 const learn = {
-  goal: {
-    margin: 0,
-    color: 'var(--muted)',
-    lineHeight: 1.6,
-  },
   lessonList: {
     display: 'grid',
     gap: '0.55rem',

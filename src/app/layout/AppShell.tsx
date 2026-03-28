@@ -143,9 +143,7 @@ function breadcrumbForPath(pathname: string) {
     return 'Lessons';
   }
   if (pathname.startsWith('/lesson/')) {
-    const lessonId = pathname.split('/').at(-1) ?? '';
-    const lesson = curriculumByLesson.get(lessonId);
-    return lesson ? `Lessons > ${lesson.title}` : 'Lessons';
+    return 'Lessons';
   }
   if (pathname === '/play' || pathname === '/play/connect-4-online') {
     return 'Play';
