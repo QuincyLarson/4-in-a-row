@@ -117,12 +117,19 @@ const centerOpen = pos([], 'human', 'center-first opening');
 const stackLeft = pos([2, 6], 'human', 'stack-left opening');
 const verticalWinLeft = pos([2, 6, 2, 7, 2, 5], 'human', 'human has a vertical win on column 2');
 const blockThree = pos([1, 3, 2, 3, 4, 3], 'human', 'cpu threatens column 3');
-const horizontalWinRight = pos([3, 3, 4, 4, 5, 5], 'human', 'bottom-row line with space for column 6');
+const horizontalWinRight = pos([2, 1, 3, 1, 4, 7], 'human', 'bottom-row line with one clean open end');
 const supportRace = pos([4, 3, 4, 3, 5, 2], 'human', 'simple support race');
-const forkPrep = pos([4, 4, 3, 3, 5, 5], 'human', 'fork-prep shape');
-const diagonalPrep = pos([4, 4, 5, 5, 6, 6], 'human', 'diagonal staircase');
+const forkPrep = pos([4, 2, 4, 2, 5, 3, 6, 7], 'human', 'fork-prep lane');
+const diagonalSupportWin = pos(
+  [1, 2, 2, 3, 5, 3, 3, 4, 6, 4, 7, 4],
+  'human',
+  'supported diagonal with one landing square',
+);
+const diagonalPrep = pos([4, 5, 5, 6, 6, 7], 'human', 'diagonal staircase');
 const parityPrep = pos([4, 3, 4, 3, 5, 2, 5, 2], 'human', 'odd-even access tension');
-const mirrorPrep = pos([4, 4, 3, 3, 5, 5, 2, 2], 'human', 'mirror opening');
+const poisonedParityPrep = pos([4, 3, 4, 3, 5, 2, 1, 6], 'human', 'poisoned parity setup');
+const mirrorPrep = pos([4, 4, 3, 3, 5, 2, 1, 1], 'human', 'mirror opening tension');
+const mirrorPunish = pos([4, 4, 3, 3, 5, 5, 1, 6], 'human', 'mirror punish window');
 const endgamePrep = pos([4, 1, 4, 2, 3, 2, 3, 6], 'human', 'late-position squeeze');
 
 const world0Lessons = [
@@ -216,10 +223,10 @@ const world0Lessons = [
         'Complete the horizontal win',
         'The bottom row already has three in a row. Close the line on the right.',
         horizontalWinRight,
-        [6],
+        [5],
         [TAGS.winIn1],
         {
-          hintColumns: [6],
+          hintColumns: [5],
           successMessage: 'You saw the horizontal line before it closed on you.',
           failureMessage: 'Look for the open end of the row.',
         },
@@ -359,10 +366,10 @@ const world1Lessons = [
         'Identify the win',
         'This is a one-move win, so the scan stops immediately.',
         horizontalWinRight,
-        [6],
+        [5],
         [TAGS.winIn1],
         {
-          hintColumns: [6],
+          hintColumns: [5],
           successMessage: 'You stopped at the first rule: can I win now?',
         },
       ),
@@ -429,11 +436,11 @@ const world1Lessons = [
       drill(
         'world-1-speed-drills-drill-1',
         'Snap win',
-        'This is the same vertical pattern at a new board address.',
+        'This is the same win-in-one pattern at a new board address.',
         horizontalWinRight,
-        [6],
+        [5],
         [TAGS.winIn1],
-        { hintColumns: [6], successMessage: 'The pattern is familiar now.' },
+        { hintColumns: [5], successMessage: 'The pattern is familiar now.' },
       ),
       drill(
         'world-1-speed-drills-drill-2',
@@ -788,9 +795,9 @@ const world4Lessons = [
         'Set the fork',
         'Choose the move that prepares two future wins at once.',
         forkPrep,
-        [3, 5],
+        [4],
         [TAGS.doubleThreat, TAGS.threat],
-        { hintColumns: [3, 5], successMessage: 'You are building a position, not just a move.' },
+        { hintColumns: [4], successMessage: 'You are building a position, not just a move.' },
       ),
       puzzle(
         'world-4-fork-construction-puzzle-1',
@@ -817,7 +824,7 @@ const world4Lessons = [
         'world-4-fork-defense-guided',
         'Block the fork early',
         'Do not wait until the fork is complete. Remove the support before the double threat lands.',
-        pos([4, 4, 3, 3, 5, 5], 'human', 'fork defense setup'),
+        forkPrep,
         [4],
         [TAGS.doubleThreat, TAGS.defense],
         { hintColumns: [4], successMessage: 'The best defense is often a small structural move.' },
@@ -890,7 +897,7 @@ const world5Lessons = [
         'world-5-diagonal-support-guided',
         'Find the support square',
         'Pick the move that makes the diagonal actually playable.',
-        diagonalPrep,
+        diagonalSupportWin,
         [4],
         [TAGS.diagonal],
         { hintColumns: [4], successMessage: 'You found the square beneath the square.' },
@@ -1065,7 +1072,7 @@ const world6Lessons = [
         'world-6-poisoned-moves-guided',
         'Avoid the poison',
         'The active-looking move is not always the healthy one.',
-        pos([4, 4, 3, 3, 5, 5, 2, 2], 'human', 'poisoned setup'),
+        poisonedParityPrep,
         [4],
         [TAGS.parity, TAGS.defense],
         { hintColumns: [4], successMessage: 'You avoided the move that would have opened the door for them.' },
@@ -1157,18 +1164,18 @@ const world7Lessons = [
     steps: [
       drill(
         'world-7-symmetry-mirror-drill-1',
-        'Mirror the center',
-        'Respond in a way that keeps the board balanced unless the tactic says otherwise.',
+        'Balance the mirror',
+        'Answer the side probe with the balancing move unless a tactic gives you something stronger.',
         mirrorPrep,
-        [4],
+        [6],
         [TAGS.opening],
-        { hintColumns: [4], successMessage: 'You preserved symmetry until a real reason to break it appeared.' },
+        { hintColumns: [6], successMessage: 'You preserved symmetry until a real reason to break it appeared.' },
       ),
       puzzle(
         'world-7-symmetry-mirror-puzzle-1',
         'Mirror or punish?',
         'If the opponent mirrored your move, ask whether the right response is still center pressure.',
-        pos([4, 4, 3, 3, 5, 5, 1, 1], 'human', 'mirror response'),
+        mirrorPunish,
         [2],
         [TAGS.opening, TAGS.center],
         { hintColumns: [2], coachNotes: [note('mirror', TAGS.opening, 'Mirrors are useful until they are not', 'Sometimes the best response is a quiet imbalance.')], successMessage: 'You looked for the practical reply, not the textbook one.' },
