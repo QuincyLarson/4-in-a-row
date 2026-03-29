@@ -5,11 +5,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { strategyArticleBySlug } from '../../content';
 
 const navItems = [
-  { to: '/', label: 'Home' },
   { to: '/learn', label: 'Learn' },
-  { to: '/play', label: 'Play' },
   { to: '/battle', label: 'Battle' },
-  { to: '/review', label: 'Review' },
   { to: '/profile', label: 'Profile' },
 ];
 
@@ -32,7 +29,7 @@ export function AppShell() {
     <div style={shellStyles.frame}>
       <header style={shellStyles.header}>
         <div style={shellStyles.topBar}>
-          <NavLink to="/" style={shellStyles.brand}>
+          <NavLink to="/learn" style={shellStyles.brand}>
             Learn Drop 4
           </NavLink>
           <div style={shellStyles.breadcrumb}>{breadcrumb}</div>
@@ -63,22 +60,16 @@ export function AppShell() {
 
 function titleForPath(pathname: string) {
   if (pathname === '/') {
-    return 'Learn Drop 4';
+    return 'Learn - Learn Drop 4';
   }
   if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
     return 'Learn - Learn Drop 4';
-  }
-  if (pathname === '/play' || pathname === '/play/connect-4-online') {
-    return 'Play - Learn Drop 4';
   }
   if (pathname.startsWith('/lesson/')) {
     return 'Lesson - Learn Drop 4';
   }
   if (pathname === '/battle') {
     return 'Battle - Learn Drop 4';
-  }
-  if (pathname === '/review') {
-    return 'Review - Learn Drop 4';
   }
   if (pathname === '/profile') {
     return 'Profile - Learn Drop 4';
@@ -100,22 +91,16 @@ function titleForPath(pathname: string) {
 
 function descriptionForPath(pathname: string) {
   if (pathname === '/') {
-    return 'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, review, and a full client-side curriculum.';
+    return 'Follow the Learn Drop 4 curriculum from first move to advanced practical play.';
   }
   if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
     return 'Follow the Learn Drop 4 curriculum from first move to advanced practical play.';
-  }
-  if (pathname === '/play' || pathname === '/play/connect-4-online') {
-    return 'Play quick local matches against the Learn Drop 4 AI ladder.';
   }
   if (pathname.startsWith('/lesson/')) {
     return 'Open a board-first lesson in Learn Drop 4 and work through the concept one move at a time.';
   }
   if (pathname === '/battle') {
     return 'See the full Learn Drop 4 ladder, boss unlocks, and analysis path.';
-  }
-  if (pathname === '/review') {
-    return 'Use the Learn Drop 4 review queue to revisit mistakes until they stick.';
   }
   if (pathname === '/profile') {
     return 'Adjust sound, motion, contrast, and local save settings in Learn Drop 4.';
@@ -137,7 +122,7 @@ function descriptionForPath(pathname: string) {
 
 function breadcrumbForPath(pathname: string) {
   if (pathname === '/') {
-    return 'Home';
+    return 'Learn';
   }
   if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
     return 'Learn';
@@ -145,14 +130,8 @@ function breadcrumbForPath(pathname: string) {
   if (pathname.startsWith('/lesson/')) {
     return 'Learn';
   }
-  if (pathname === '/play' || pathname === '/play/connect-4-online') {
-    return 'Play';
-  }
   if (pathname === '/battle') {
     return 'Battle';
-  }
-  if (pathname === '/review') {
-    return 'Review';
   }
   if (pathname === '/profile') {
     return 'Profile';
@@ -181,17 +160,18 @@ const shellStyles: Record<string, CSSProperties> = {
     minHeight: '100vh',
   },
   header: {
-    padding: '0.8rem 1rem 0',
+    padding: '0.42rem 0.9rem 0',
     justifyItems: 'center',
   },
   topBar: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
+    gap: '0.65rem',
     width: '100%',
     maxWidth: 'var(--max-width)',
-    padding: '0.75rem 0.9rem',
-    borderRadius: 'var(--radius-lg)',
+    minHeight: '3.1rem',
+    padding: '0.38rem 0.72rem',
+    borderRadius: '0.95rem',
     background: 'var(--panel)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
     boxShadow: 'var(--shadow)',
@@ -207,7 +187,7 @@ const shellStyles: Record<string, CSSProperties> = {
     minWidth: 0,
     flex: '1 1 auto',
     color: 'var(--muted)',
-    fontSize: '0.9rem',
+    fontSize: '0.82rem',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -219,13 +199,13 @@ const shellStyles: Record<string, CSSProperties> = {
     gap: '0.35rem',
   },
   link: {
-    padding: '0.55rem 0.7rem',
-    borderRadius: '0.75rem',
+    padding: '0.42rem 0.62rem',
+    borderRadius: '0.68rem',
     color: 'var(--muted)',
     textDecoration: 'none',
     background: 'var(--surface)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
-    fontSize: '0.9rem',
+    fontSize: '0.84rem',
   },
   linkActive: {
     color: 'var(--ink)',
@@ -237,13 +217,13 @@ const shellStyles: Record<string, CSSProperties> = {
     display: 'grid',
     alignContent: 'start',
     justifyItems: 'center',
-    padding: '0.85rem 1rem 1.6rem',
+    padding: '0.45rem 0.9rem 1.2rem',
   },
   content: {
     width: '100%',
     maxWidth: 'var(--max-width)',
     minHeight: '30rem',
-    padding: 'clamp(0.9rem, 1.6vw, 1.2rem)',
+    padding: 'clamp(0.78rem, 1.3vw, 1rem)',
     borderRadius: 'var(--radius-lg)',
     background: 'var(--panel)',
     border: '1px solid rgba(245, 246, 247, 0.08)',

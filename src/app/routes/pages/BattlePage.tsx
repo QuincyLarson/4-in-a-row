@@ -1,19 +1,80 @@
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+
 import { battleAis } from '../../../content';
-import { isAiUnlocked } from '../../progression';
+import { GameArena } from '../../../features/battle/GameArena';
+import { findReviewTarget, isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, PageSection, RouteButton } from './shared';
+import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
 
 export function BattlePage() {
   const {
     state: { save },
+    actions,
   } = useAppState();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const playableAis = battleAis.filter((ai) => ai.role !== 'analysis');
+  const unlockedAis = playableAis.filter((ai) => isAiUnlocked(save, ai));
+  const selectedId = searchParams.get('ai') ?? unlockedAis[0]?.id ?? playableAis[0]?.id ?? 'warmup-bot';
+  const selected = useMemo(
+    () =>
+      unlockedAis.find((ai) => ai.id === selectedId) ??
+      unlockedAis[0] ??
+      playableAis[0],
+    [playableAis, selectedId, unlockedAis],
+  );
+
+  if (!selected) {
+    return <PageSection title="Battle the ladder." body="No battle profiles are available." />;
+  }
 
   return (
     <PageSection
-      eyebrow="Battle Ladder"
-      title="Climb the ladder."
-      body="Beat one level to unlock the next."
+      eyebrow="Battle"
+      title="Battle the ladder."
+      body="Pick a level, play in place, and unlock the next one by winning."
+      actions={
+        <>
+          <Chip tone="warning">Current: Level {selected.level}</Chip>
+          <Chip>{selected.name}</Chip>
+        </>
+      }
     >
+      <GameArena
+        aiId={selected.id}
+        title={`Level ${selected.level}: ${selected.name}`}
+        description={selected.summary}
+        mode="battle"
+        onHumanResolvedMove={(_, analysis) => {
+          if (!analysis || !['inaccuracy', 'mistake', 'blunder'].includes(analysis.quality)) {
+            return;
+          }
+
+          const conceptTag = selected.reviewTags[0] ?? 'review';
+          const target = findReviewTarget({
+            puzzleId: `battle-${selected.id}-${conceptTag}`,
+            conceptTag,
+            dueAt: new Date().toISOString(),
+            attempts: 0,
+            correct: 0,
+            streak: 0,
+          });
+
+          if (!target) {
+            return;
+          }
+
+          actions.queueReview({
+            puzzleId: target.step.id,
+            conceptTag,
+            dueAt: new Date(Date.now() + 5 * 60_000).toISOString(),
+            attempts: 0,
+            correct: 0,
+            streak: 0,
+          });
+        }}
+      />
+
       <CardGrid>
         {battleAis.map((ai) => {
           const beaten =
@@ -26,6 +87,7 @@ export function BattlePage() {
               : ai.role === 'boss'
                 ? 'var(--human-0)'
                 : 'var(--cpu-0)';
+          const isSelected = selected.id === ai.id;
 
           return (
             <Card
@@ -38,17 +100,24 @@ export function BattlePage() {
                   <Chip tone={beaten ? 'success' : unlocked ? 'default' : 'warning'}>
                     {beaten ? 'Cleared' : unlocked ? 'Ready' : 'Locked'}
                   </Chip>
+                  {isSelected ? <Chip tone="warning">Current</Chip> : null}
                 </>
               }
             >
-              {ai.role !== 'analysis' ? (
-                <RouteButton to={unlocked ? `/play?ai=${ai.id}` : '/battle'} tone={unlocked ? 'accent' : 'default'} disabled={!unlocked}>
-                  {unlocked ? 'Start match' : `Beat ${previousAi?.name ?? 'the previous level'}`}
-                </RouteButton>
+              {ai.role === 'analysis' ? (
+                <p style={battle.copy}>Coach analysis is already active during your matches.</p>
               ) : (
-                <RouteButton to={unlocked ? '/sandbox' : '/battle'} tone={unlocked ? 'accent' : 'default'} disabled={!unlocked}>
-                  {unlocked ? 'Open coach' : `Beat ${previousAi?.name ?? 'the previous level'}`}
-                </RouteButton>
+                <InlineButton
+                  tone={unlocked ? 'accent' : 'default'}
+                  disabled={!unlocked}
+                  onClick={() => {
+                    const nextParams = new URLSearchParams(searchParams);
+                    nextParams.set('ai', ai.id);
+                    setSearchParams(nextParams);
+                  }}
+                >
+                  {isSelected ? 'Current match' : unlocked ? 'Start match' : `Beat ${previousAi?.name ?? 'the previous level'}`}
+                </InlineButton>
               )}
             </Card>
           );
@@ -57,3 +126,12 @@ export function BattlePage() {
     </PageSection>
   );
 }
+
+const battle = {
+  copy: {
+    margin: 0,
+    color: 'var(--muted)',
+    lineHeight: 1.45,
+    fontSize: '0.9rem',
+  },
+};

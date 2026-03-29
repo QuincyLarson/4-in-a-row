@@ -27,14 +27,14 @@ export function ProfilePage() {
 
   return (
     <PageSection
-      eyebrow="Profile & Settings"
+      eyebrow="Profile"
       title={state.save.profile.displayName || 'Local profile'}
-      body="Everything in this app is local-only. Sound, motion, pattern mode, contrast, and save transfer all live here."
+      body="Local settings, accessibility, and save transfer."
     >
       <CardGrid>
         <Card
           title="Progress Snapshot"
-          body="A quick read on curriculum progress and review load."
+          body="A quick read on your local progress."
           accent="var(--accent)"
           footer={
             <>
@@ -44,10 +44,10 @@ export function ProfilePage() {
             </>
           }
         >
-          <p style={profile.copy}>Review due: {stats.reviewDue} items</p>
+          <p style={profile.copy}>Review due: {stats.reviewDue}</p>
           <p style={profile.copy}>Created: {new Date(state.save.profile.createdAt).toLocaleDateString()}</p>
         </Card>
-      <Card title="Display Name" body="Purely local. Used only to personalize the profile and lesson copy.">
+      <Card title="Display Name" body="Used only in this browser.">
           <label style={profile.label}>
             Name
             <input
@@ -67,13 +67,13 @@ export function ProfilePage() {
               setMessage('Display name updated.');
             }}
           >
-            Save profile name
+            Save name
           </InlineButton>
         </Card>
       </CardGrid>
 
       <CardGrid>
-        <Card title="Audio & Motion" body="Sound stays muted on demand. Reduced motion keeps the board readable without the extra bounce.">
+        <Card title="Audio & Motion" body="Control sound and motion.">
           <label style={profile.toggle}>
             <input
               type="checkbox"
@@ -100,14 +100,14 @@ export function ProfilePage() {
           </label>
         </Card>
 
-        <Card title="Sound cues" body="Short synth cues stay consistent so you can learn the board by ear as well as by sight.">
+        <Card title="Sound cues" body="What each cue means.">
           <p style={profile.copy}>High ping: your piece is released.</p>
           <p style={profile.copy}>Low ping: the CPU releases a piece.</p>
           <p style={profile.copy}>Thunk: a piece lands in the grid.</p>
           <p style={profile.copy}>Win/loss chords: end-of-game feedback.</p>
         </Card>
 
-        <Card title="Board Readability" body="Pattern mode makes the pieces distinguishable without relying on color alone.">
+        <Card title="Board Readability" body="Piece clarity and CPU tempo.">
           <label style={profile.toggle}>
             <input
               type="radio"
@@ -149,7 +149,7 @@ export function ProfilePage() {
 
       <Card
         title="Export / Import Progress"
-        body="The exported JSON is the versioned save envelope. Importing runs migrations before the app accepts it."
+        body="Export or import the versioned save envelope."
         accent="var(--warning)"
       >
         <div style={profile.transferButtons}>
@@ -193,7 +193,7 @@ export function ProfilePage() {
         <textarea
           value={transferText}
           onChange={(event) => setTransferText(event.target.value)}
-          rows={14}
+          rows={10}
           style={profile.textarea}
         />
         {message ? <p style={profile.message}>{message}</p> : null}
@@ -206,17 +206,19 @@ const profile = {
   copy: {
     margin: 0,
     color: 'var(--muted)',
-    lineHeight: 1.6,
+    lineHeight: 1.45,
+    fontSize: '0.9rem',
   },
   label: {
     display: 'grid',
-    gap: '0.55rem',
+    gap: '0.4rem',
     color: 'var(--muted)',
+    fontSize: '0.88rem',
   },
   input: {
-    minHeight: '2.7rem',
-    padding: '0.75rem 0.95rem',
-    borderRadius: '0.95rem',
+    minHeight: '2.4rem',
+    padding: '0.58rem 0.8rem',
+    borderRadius: '0.8rem',
     background: 'rgba(255, 255, 255, 0.04)',
     border: '1px solid rgba(127, 219, 255, 0.14)',
     color: 'var(--ink)',
@@ -224,19 +226,20 @@ const profile = {
   toggle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.65rem',
+    gap: '0.5rem',
     color: 'var(--muted)',
+    fontSize: '0.9rem',
   },
   transferButtons: {
     display: 'flex',
-    gap: '0.75rem',
+    gap: '0.55rem',
     flexWrap: 'wrap' as const,
   },
   textarea: {
     width: '100%',
-    minHeight: '18rem',
-    padding: '1rem',
-    borderRadius: '1rem',
+    minHeight: '12rem',
+    padding: '0.85rem',
+    borderRadius: '0.85rem',
     background: 'rgba(255, 255, 255, 0.04)',
     border: '1px solid rgba(127, 219, 255, 0.14)',
     color: 'var(--ink)',

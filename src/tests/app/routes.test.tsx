@@ -1,17 +1,14 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppShell } from '../../app/layout/AppShell';
 import { AboutPage } from '../../app/routes/pages/AboutPage';
 import { BattlePage } from '../../app/routes/pages/BattlePage';
 import { CreditsPage } from '../../app/routes/pages/CreditsPage';
-import { HomePage } from '../../app/routes/pages/HomePage';
 import { LearnPage } from '../../app/routes/pages/LearnPage';
 import { LessonPage } from '../../app/routes/pages/LessonPage';
-import { PlayPage } from '../../app/routes/pages/PlayPage';
 import { ProfilePage } from '../../app/routes/pages/ProfilePage';
-import { ReviewPage } from '../../app/routes/pages/ReviewPage';
 import { SandboxPage } from '../../app/routes/pages/SandboxPage';
 import { StrategyPage } from '../../app/routes/pages/StrategyPage';
 import { AppStateProvider } from '../../app/state/AppStateContext';
@@ -34,11 +31,11 @@ function renderRoute(initialEntry: string, save = makeSave()) {
       <AppStateProvider>
         <Routes>
           <Route element={<AppShell />}>
-            <Route index element={<HomePage />} />
+            <Route index element={<Navigate to="/learn" replace />} />
             <Route path="learn" element={<LearnPage />} />
-            <Route path="play" element={<PlayPage />} />
+            <Route path="play" element={<Navigate to="/battle" replace />} />
             <Route path="battle" element={<BattlePage />} />
-            <Route path="review" element={<ReviewPage />} />
+            <Route path="review" element={<Navigate to="/learn" replace />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="strategy/:slug" element={<StrategyPage />} />
@@ -82,48 +79,31 @@ describe('app routes', () => {
     );
   });
 
-  it('shows an accurate due count on the home page and resumes the next unlocked lesson', async () => {
+  it('redirects the root route to learn', async () => {
     const save = makeSave();
-    save.progress.completedLessonIds.push('world-0-board-and-gravity');
-    save.review.entries.push(
-      {
-        puzzleId: 'due-item',
-        conceptTag: 'review',
-        dueAt: '2026-03-24T11:55:00.000Z',
-        attempts: 0,
-        correct: 0,
-        streak: 0,
-      },
-      {
-        puzzleId: 'scheduled-item',
-        conceptTag: 'review',
-        dueAt: '2026-03-25T12:00:00.000Z',
-        attempts: 0,
-        correct: 0,
-        streak: 0,
-      },
-    );
 
     renderRoute('/', save);
 
-    await screen.findByText('Your progress');
-    expect(screen.getByText('1 due reviews')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Continue with Three win directions' })).toBeInTheDocument();
+    await screen.findByRole('heading', {
+      name: 'A full curriculum from first move to near-perfect practical play.',
+    });
   });
 
-  it('gates the ladder and the play page to unlocked opponents', async () => {
-    renderRoute('/battle');
+  it('gates the ladder and falls back to the first unlocked battle', async () => {
+    const firstRender = renderRoute('/battle');
 
-    await screen.findByRole('heading', { name: 'Climb the ladder.' });
+    await screen.findByRole('heading', { name: 'Battle the ladder.' });
     expect(screen.getByText('Level 2: Center Sentinel')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Beat / }).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Current match' })).toBeInTheDocument();
 
+    firstRender.unmount();
     renderRoute('/play?ai=endgame-engine');
 
-    await screen.findByRole('heading', { name: 'Fast local play against the ladder.' });
-    const select = screen.getByLabelText('Choose AI') as HTMLSelectElement;
-    expect(select.value).toBe('warmup-bot');
-    expect(screen.getByRole('option', { name: 'Endgame Engine (locked)' })).toBeDisabled();
+    await screen.findByRole('heading', { name: 'Battle the ladder.' });
+    expect(screen.getAllByText('Level 0: Warmup Bot').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Current match' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Beat Mirror Master' })).toBeDisabled();
   });
 
   it('hydrates the profile name from saved progress and round-trips import and export', async () => {
@@ -154,24 +134,12 @@ describe('app routes', () => {
     expect(screen.getByText('Save imported successfully.')).toBeInTheDocument();
   });
 
-  it('runs a due review drill and reschedules it after a correct answer', async () => {
-    const save = makeSave();
-    save.review.entries.push({
-      puzzleId: 'world-0-first-win-drill-1',
-      conceptTag: 'win-in-1',
-      dueAt: '2026-03-24T11:45:00.000Z',
-      attempts: 0,
-      correct: 0,
-      streak: 0,
+  it('redirects the retired review route back to learn', async () => {
+    renderRoute('/review');
+
+    await screen.findByRole('heading', {
+      name: 'A full curriculum from first move to near-perfect practical play.',
     });
-
-    renderRoute('/review', save);
-
-    await screen.findByText('Review: Your first win');
-    fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
-
-    await screen.findByText('Nothing due right now');
-    expect(screen.getAllByText(/Locked in\./).length).toBeGreaterThan(0);
   });
 
   it('renders the learn, about, credits, sandbox, and strategy surfaces', async () => {
@@ -195,12 +163,4 @@ describe('app routes', () => {
     expect(screen.getByText('Related lessons')).toBeInTheDocument();
   });
 
-  it('shows the simplified landing copy on home', async () => {
-    renderRoute('/');
-
-    await screen.findByRole('heading', {
-      name: 'Learn the 4 in a row game for free in your browser.',
-    });
-    expect(screen.getByText('No ads. No sign-in. Just local play, short lessons, and review.')).toBeInTheDocument();
-  });
 });

@@ -96,9 +96,11 @@ function GameArenaSession({
   const [analysis, setAnalysis] = useState<MoveAnalysis | null>(null);
   const [previewVisible, setPreviewVisible] = useState(true);
   const [replayPly, setReplayPly] = useState<number | null>(null);
+  const [outcomeVisible, setOutcomeVisible] = useState(false);
   const finishedRef = useRef(false);
   const soundTimeoutsRef = useRef<number[]>([]);
   const previewTimeoutRef = useRef<number | null>(null);
+  const outcomeTimeoutRef = useRef<number | null>(null);
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
@@ -148,8 +150,25 @@ function GameArenaSession({
     return () => {
       clearQueuedSounds(soundTimeoutsRef);
       clearPreviewLock(previewTimeoutRef);
+      clearOutcomeDelay(outcomeTimeoutRef);
     };
   }, []);
+
+  useEffect(() => {
+    clearOutcomeDelay(outcomeTimeoutRef);
+
+    if (result === null || replayPly !== null) {
+      return;
+    }
+
+    const delayMs = result === 'win' ? 250 : 0;
+    outcomeTimeoutRef.current = window.setTimeout(() => {
+      outcomeTimeoutRef.current = null;
+      setOutcomeVisible(true);
+    }, delayMs);
+
+    return () => clearOutcomeDelay(outcomeTimeoutRef);
+  }, [replayPly, result]);
 
   useEffect(() => {
     if (result === null || finishedRef.current) {
@@ -245,6 +264,7 @@ function GameArenaSession({
     }
 
     setReplayPly(null);
+    setOutcomeVisible(false);
     const boardBefore = board;
     const landingRow = getDropRow(board, column) ?? 0;
     const landingDelay = getDropDurationMs(
@@ -290,6 +310,7 @@ function GameArenaSession({
       return;
     }
     setReplayPly(null);
+    setOutcomeVisible(false);
     const landingRow = getDropRow(board, column) ?? 0;
     const landingDelay = getDropDurationMs(
       landingRow,
@@ -335,6 +356,7 @@ function GameArenaSession({
   function resetBoard() {
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
+    clearOutcomeDelay(outcomeTimeoutRef);
     cpuReadyAtRef.current = 0;
     setBoard(baseBoard);
     setPreviewVisible(true);
@@ -342,6 +364,7 @@ function GameArenaSession({
     setHintColumn(null);
     setAnalysis(null);
     setReplayPly(null);
+    setOutcomeVisible(false);
     setThinking(Boolean(aiId && baseBoard.turn === 'cpu' && boardOutcome(baseBoard) === 'playing'));
     finishedRef.current = false;
   }
@@ -352,6 +375,7 @@ function GameArenaSession({
     }
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
+    clearOutcomeDelay(outcomeTimeoutRef);
     cpuReadyAtRef.current = 0;
     const trim = aiId ? 2 : 1;
     const nextMoves = board.moves.slice(
@@ -366,6 +390,7 @@ function GameArenaSession({
     setHintColumn(null);
     setAnalysis(null);
     setReplayPly(null);
+    setOutcomeVisible(false);
     setThinking(
       Boolean(aiId && reconstructed.turn === 'cpu' && boardOutcome(reconstructed) === 'playing'),
     );
@@ -388,7 +413,7 @@ function GameArenaSession({
       return;
     }
     setReplayPly(null);
-    navigate(`/play?ai=${nextAi.id}`);
+    navigate(`/battle?ai=${nextAi.id}`);
   }
 
   return (
@@ -448,9 +473,9 @@ function GameArenaSession({
               disabled={!previewVisible || thinking || (board.turn === 'cpu' && !!aiId) || replayPly !== null}
               winningLine={winningLine}
               showConfetti={result === 'win' && replayPly === null}
-              outcomeLabel={replayPly === null ? outcomeLabel : null}
+              outcomeLabel={replayPly === null && outcomeVisible ? outcomeLabel : null}
               outcomeActions={
-                replayPly === null && result
+                replayPly === null && result && outcomeVisible
                   ? [
                       { label: 'Replay', onClick: resetBoard, variant: 'secondary' as const },
                       ...(result === 'win' && canAdvance
@@ -669,6 +694,13 @@ function lockPreview(
 }
 
 function clearPreviewLock(timeoutRef: MutableRefObject<number | null>) {
+  if (timeoutRef.current !== null) {
+    window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+}
+
+function clearOutcomeDelay(timeoutRef: MutableRefObject<number | null>) {
   if (timeoutRef.current !== null) {
     window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;

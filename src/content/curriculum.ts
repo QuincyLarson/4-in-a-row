@@ -114,10 +114,10 @@ const lessonDef = (data: LessonDef): LessonDef => lesson(data);
 
 const empty = pos([], 'human', 'opening board');
 const centerOpen = pos([], 'human', 'center-first opening');
-const stackCenter = pos([4, 1], 'human', 'stack-center opening');
-const verticalWin = pos([4, 1, 4, 2, 4, 3], 'human', 'human has a vertical win');
-const blockFive = pos([1, 5, 2, 5, 3, 5], 'human', 'cpu threatens column 5');
-const horizontalWin = pos([1, 1, 2, 2, 3, 3], 'human', 'bottom-row line with space for column 4');
+const stackLeft = pos([2, 6], 'human', 'stack-left opening');
+const verticalWinLeft = pos([2, 6, 2, 7, 2, 5], 'human', 'human has a vertical win on column 2');
+const blockThree = pos([1, 3, 2, 3, 4, 3], 'human', 'cpu threatens column 3');
+const horizontalWinRight = pos([3, 3, 4, 4, 5, 5], 'human', 'bottom-row line with space for column 6');
 const supportRace = pos([4, 3, 4, 3, 5, 2], 'human', 'simple support race');
 const forkPrep = pos([4, 4, 3, 3, 5, 5], 'human', 'fork-prep shape');
 const diagonalPrep = pos([4, 4, 5, 5, 6, 6], 'human', 'diagonal staircase');
@@ -153,14 +153,14 @@ const world0Lessons = [
       guided(
         'world-0-board-and-gravity-stack',
         'Stack in the same column',
-        'Drop in the center again and watch the new chip land on top of the old one.',
-        stackCenter,
-        [4],
+        'Drop in the same column again and watch the new chip land on top of the old one.',
+        stackLeft,
+        [2],
         [TAGS.rules],
         {
-          hintColumns: [4],
+          hintColumns: [2],
           successMessage: 'Exactly. Filled cells hold the next chip up.',
-          failureMessage: 'Use the center column and notice the stack grow upward.',
+          failureMessage: 'Use the same column again and notice the stack grow upward.',
         },
       ),
       drill(
@@ -194,7 +194,7 @@ const world0Lessons = [
         'You can win vertically, horizontally, or on a diagonal. The board changes, but the search habit is the same.',
         [TAGS.rules, TAGS.winIn1],
         {
-          position: verticalWin,
+          position: verticalWinLeft,
           coachNotes: [note('three-lines', TAGS.rules, 'One rule, three directions', 'Look for the missing fourth chip in the line.')],
         },
       ),
@@ -202,11 +202,11 @@ const world0Lessons = [
         'world-0-three-win-directions-guided-vertical',
         'Complete the vertical win',
         'This column already has three of yours. Finish the stack.',
-        verticalWin,
-        [4],
+        verticalWinLeft,
+        [2],
         [TAGS.winIn1],
         {
-          hintColumns: [4],
+          hintColumns: [2],
           successMessage: 'That is a clean win in one.',
           failureMessage: 'Search for the column with three of your chips already stacked.',
         },
@@ -215,11 +215,11 @@ const world0Lessons = [
         'world-0-three-win-directions-guided-horizontal',
         'Complete the horizontal win',
         'The bottom row already has three in a row. Close the line on the right.',
-        horizontalWin,
-        [4],
+        horizontalWinRight,
+        [6],
         [TAGS.winIn1],
         {
-          hintColumns: [4],
+          hintColumns: [6],
           successMessage: 'You saw the horizontal line before it closed on you.',
           failureMessage: 'Look for the open end of the row.',
         },
@@ -240,11 +240,11 @@ const world0Lessons = [
         'world-0-first-win-drill-1',
         'Win in one',
         'Take the obvious win without overthinking it.',
-        verticalWin,
-        [4],
+        verticalWinLeft,
+        [2],
         [TAGS.winIn1],
         {
-          hintColumns: [4],
+          hintColumns: [2],
           successMessage: 'Fast and clean. Winning first keeps the rest of the board honest.',
         },
       ),
@@ -279,19 +279,19 @@ const world0Lessons = [
         'If the CPU already has three in a line, stopping that line comes before any prettier plan.',
         [TAGS.blockIn1, TAGS.defense],
         {
-          position: blockFive,
+          position: blockThree,
           coachNotes: [note('block-now', TAGS.blockIn1, 'Block now', 'A one-move loss is never worth a long-term idea.')],
         },
       ),
       guided(
         'world-0-first-block-guided',
         'Block the threat',
-        'The CPU is threatening a win in column 5. Cut it off immediately.',
-        blockFive,
-        [5],
+        'The CPU is threatening a win in column 3. Cut it off immediately.',
+        blockThree,
+        [3],
         [TAGS.blockIn1],
         {
-          hintColumns: [5],
+          hintColumns: [3],
           successMessage: 'Good. You removed the immediate loss.',
           failureMessage: 'Find the CPU stack of three and cover its open end.',
         },
@@ -350,7 +350,7 @@ const world1Lessons = [
         'Every turn starts the same way: can I win now, must I block now, and only then should I shape the board?',
         [TAGS.winIn1, TAGS.blockIn1, TAGS.review],
         {
-          position: verticalWin,
+          position: horizontalWinRight,
           coachNotes: [note('scan-first', TAGS.review, 'Scan first', 'A quick tactical scan is faster than a long explanation.')],
         },
       ),
@@ -358,11 +358,11 @@ const world1Lessons = [
         'world-1-scan-order-guided-win',
         'Identify the win',
         'This is a one-move win, so the scan stops immediately.',
-        verticalWin,
-        [4],
+        horizontalWinRight,
+        [6],
         [TAGS.winIn1],
         {
-          hintColumns: [4],
+          hintColumns: [6],
           successMessage: 'You stopped at the first rule: can I win now?',
         },
       ),
@@ -370,11 +370,11 @@ const world1Lessons = [
         'world-1-scan-order-guided-block',
         'Identify the block',
         'If the opponent has the win, your scan ends in defense.',
-        blockFive,
-        [5],
+        blockThree,
+        [3],
         [TAGS.blockIn1],
         {
-          hintColumns: [5],
+          hintColumns: [3],
           successMessage: 'The block came before any stylistic idea.',
         },
       ),
@@ -406,11 +406,11 @@ const world1Lessons = [
         'world-1-mixed-tactics-puzzle-1',
         'Immediate defense',
         'This one looks active, but the safe move is still the defensive answer.',
-        blockFive,
-        [5],
+        blockThree,
+        [3],
         [TAGS.blockIn1, TAGS.review],
         {
-          hintColumns: [5],
+          hintColumns: [3],
           failureMessage: 'The opponent’s threat is the strongest thing on the board.',
         },
       ),
@@ -430,19 +430,19 @@ const world1Lessons = [
         'world-1-speed-drills-drill-1',
         'Snap win',
         'This is the same vertical pattern at a new board address.',
-        verticalWin,
-        [4],
+        horizontalWinRight,
+        [6],
         [TAGS.winIn1],
-        { hintColumns: [4], successMessage: 'The pattern is familiar now.' },
+        { hintColumns: [6], successMessage: 'The pattern is familiar now.' },
       ),
       drill(
         'world-1-speed-drills-drill-2',
         'Snap block',
         'Block the only immediate loss before you think about anything else.',
-        blockFive,
-        [5],
+        blockThree,
+        [3],
         [TAGS.blockIn1],
-        { hintColumns: [5], successMessage: 'You kept the game alive.' },
+        { hintColumns: [3], successMessage: 'You kept the game alive.' },
       ),
     ],
   }),

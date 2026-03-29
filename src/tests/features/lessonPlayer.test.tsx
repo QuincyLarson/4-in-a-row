@@ -55,7 +55,7 @@ describe('LessonPlayer', () => {
     expect(container.querySelector('.board-chip--drop-overlay')).not.toBeNull();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(800);
+      await vi.advanceTimersByTimeAsync(900);
     });
     expect(screen.getByText('Correct!')).toBeInTheDocument();
 
@@ -64,7 +64,7 @@ describe('LessonPlayer', () => {
     });
 
     expect(
-      screen.getByText('Drop in the center again and watch the new chip land on top of the old one.'),
+      screen.getByText('Drop in the same column again and watch the new chip land on top of the old one.'),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'Board and Gravity - Lesson 2 of 3' }),
@@ -90,7 +90,7 @@ describe('LessonPlayer', () => {
       await vi.advanceTimersByTimeAsync(1_200);
     });
 
-    expect(screen.getByText('Use the center column and notice the stack grow upward.')).toBeInTheDocument();
-    expect(screen.getByText('Hint: column 4.')).toBeInTheDocument();
+    expect(screen.getByText('Use the same column again and notice the stack grow upward.')).toBeInTheDocument();
+    expect(screen.getByText('Hint: column 2.')).toBeInTheDocument();
   });
 });

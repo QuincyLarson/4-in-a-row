@@ -198,7 +198,7 @@ describe('GameArena', () => {
         fireEvent.click(screen.getByRole('button', { name: `Drop in column ${column}` }));
       });
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(900);
+        await vi.advanceTimersByTimeAsync(1_050);
       });
     }
 
@@ -211,6 +211,38 @@ describe('GameArena', () => {
 
     expect(screen.queryByText('You win!')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Replay move 1: A1' })).not.toBeInTheDocument();
+  });
+
+  it('waits briefly before showing the win overlay so the winning line stays visible first', async () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena title="Sandbox" description="Manual board" mode="sandbox" />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    const sequence = [1, 7, 2, 7, 3, 7];
+    for (const column of sequence) {
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: `Drop in column ${column}` }));
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(900);
+      });
+    }
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
+    });
+
+    expect(screen.queryByText('You win!')).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(260);
+    });
+
+    expect(screen.getByText('You win!')).toBeInTheDocument();
   });
 
   it('replays earlier positions from the move log on hover', async () => {

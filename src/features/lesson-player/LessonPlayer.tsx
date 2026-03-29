@@ -34,7 +34,8 @@ type LessonOverlay =
   | null;
 
 const STEP_SUCCESS_MS = 1_000;
-const LESSON_COMPLETE_MS = 900;
+const LESSON_COMPLETE_MS = 800;
+const ARENA_RESULT_SETTLE_MS = 900;
 
 export function LessonPlayer({ lesson }: LessonPlayerProps) {
   const navigate = useNavigate();
@@ -131,6 +132,17 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     }, STEP_SUCCESS_MS);
   }
 
+  function handleArenaFinish(result: 'win' | 'loss' | 'draw') {
+    clearTimeouts(timeoutsRef);
+    queueTimeout(timeoutsRef, () => {
+      if (result === 'loss') {
+        handleWrong();
+        return;
+      }
+      handleCorrect();
+    }, ARENA_RESULT_SETTLE_MS);
+  }
+
   function handleWrong() {
     const hint = lessonHintColumn(step);
     setMistakes((value) => value + 1);
@@ -170,15 +182,9 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
               mode="lesson"
               title={step.title}
               description={step.prompt}
-              onFinish={(result) => {
-                if (result === 'loss') {
-                  handleWrong();
-                  return;
-                }
-                handleCorrect();
-              }}
+              onFinish={(result) => handleArenaFinish(result)}
             />
-            <LessonOverlayView overlay={overlay} />
+            <LessonOverlayView overlay={overlay?.kind === 'complete' ? overlay : null} />
           </div>
         </div>
       ) : (
