@@ -148,6 +148,13 @@ describe('app routes', () => {
       name: 'A full curriculum from first move to near-perfect practical play.',
     });
     expect(screen.getByText('Zero to First Move')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Chapter 1' })).toBeInTheDocument();
+    expect(screen.getByText('Boss: Warmup Bot')).toBeInTheDocument();
+    expect(screen.getAllByText(/^Learn$/)).toHaveLength(1);
+    expect(screen.queryByText('Unlocked')).not.toBeInTheDocument();
+    expect(screen.queryByText('Locked')).not.toBeInTheDocument();
+    expect(screen.queryByText(/stars/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/lessons/i)).not.toBeInTheDocument();
 
     renderRoute('/about');
     await screen.findByRole('heading', { name: 'A static-first Learn Drop 4 trainer.' });

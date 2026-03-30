@@ -32,7 +32,7 @@ export function AppShell() {
           <NavLink to="/learn" style={shellStyles.brand}>
             Learn Drop 4
           </NavLink>
-          <div style={shellStyles.breadcrumb}>{breadcrumb}</div>
+          {breadcrumb ? <div style={shellStyles.breadcrumb}>{breadcrumb}</div> : <div style={shellStyles.spacer} />}
           <nav aria-label="Primary navigation" style={shellStyles.nav}>
             {navItems.map((item) => (
               <NavLink
@@ -122,10 +122,10 @@ function descriptionForPath(pathname: string) {
 
 function breadcrumbForPath(pathname: string) {
   if (pathname === '/') {
-    return 'Learn';
+    return '';
   }
   if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
-    return 'Learn';
+    return '';
   }
   if (pathname.startsWith('/lesson/')) {
     return 'Learn';
@@ -191,6 +191,10 @@ const shellStyles: Record<string, CSSProperties> = {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+  },
+  spacer: {
+    flex: '1 1 auto',
+    minWidth: 0,
   },
   nav: {
     display: 'flex',
