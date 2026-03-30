@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react';
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { battleAiById, curriculumLessons, curriculumWorlds } from '../../../content';
+import { battleAiById, curriculumLessons, curriculumWorlds, type WorldDef } from '../../../content';
 import { isWorldComplete } from '../../progression';
 import { useAppState } from '../../state/useAppState';
 import { PageSection } from './shared';
+import type { SaveEnvelope } from '../../../storage/types';
 
 export function LearnPage() {
   const {
@@ -16,72 +17,95 @@ export function LearnPage() {
     <PageSection title="A full curriculum from first move to near-perfect practical play.">
       <div style={learn.timeline}>
         {curriculumWorlds.map((world) => {
-          const cleared = isWorldComplete(save, world);
-          const lessons = curriculumLessons.filter((lesson) => lesson.worldId === world.id);
-          const bossLesson =
-            lessons.find((lesson) => lesson.bossAiId === world.bossAiId) ?? lessons.at(-1) ?? null;
-          const bossName =
-            battleAiById.get(world.bossAiId)?.name ?? bossLesson?.title ?? world.title;
-          const lessonPath = lessons.filter((lesson) => lesson.id !== bossLesson?.id).map((lesson) => ({
-            id: lesson.id,
-            label: lesson.title,
-            complete: save.progress.completedLessonIds.includes(lesson.id),
-          }));
-          const checkpoints = bossLesson
-            ? lessonPath.concat({
-                id: bossLesson.id,
-                label: `Boss: ${bossName}`,
-                complete: save.progress.bossWins.includes(world.bossAiId),
-              })
-            : lessonPath;
-
-          return (
-            <section key={world.id} style={learn.chapterRow}>
-              <div style={learn.rail}>
-                <div
-                  role="img"
-                  aria-label={cleared ? `Chapter ${world.order + 1} complete` : `Chapter ${world.order + 1}`}
-                  style={{
-                    ...learn.marker,
-                    ...(cleared ? learn.markerComplete : learn.markerPending),
-                  }}
-                >
-                  {cleared ? '✓' : world.order + 1}
-                </div>
-                {world.order < curriculumWorlds.length - 1 ? <div style={learn.railLine} /> : null}
-              </div>
-              <article
-                style={{
-                  ...learn.chapterCard,
-                  ...(cleared ? learn.chapterCardComplete : null),
-                }}
-              >
-                <div style={learn.chapterHeader}>
-                  <h2 style={learn.chapterTitle}>{world.title}</h2>
-                  <p style={learn.chapterSubtitle}>{world.subtitle}</p>
-                </div>
-                <div style={learn.path}>
-                  {checkpoints.map((item, index) => (
-                    <Fragment key={item.id}>
-                      <Link
-                        to={`/lesson/${item.id}`}
-                        style={{
-                          ...learn.pathLink,
-                          ...(item.complete ? learn.pathLinkComplete : null),
-                        }}
-                      >
-                        {item.label}
-                      </Link>
-                      {index < checkpoints.length - 1 ? <span style={learn.arrow}>→</span> : null}
-                    </Fragment>
-                  ))}
-                </div>
-              </article>
-            </section>
-          );
+          return <LearnChapterCard key={world.id} world={world} save={save} />;
         })}
       </div>
     </PageSection>
+  );
+}
+
+function LearnChapterCard({
+  world,
+  save,
+}: {
+  world: WorldDef;
+  save: SaveEnvelope;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const cleared = isWorldComplete(save, world);
+  const lessons = curriculumLessons.filter((lesson) => lesson.worldId === world.id);
+  const bossLesson =
+    lessons.find((lesson) => lesson.bossAiId === world.bossAiId) ?? lessons.at(-1) ?? null;
+  const bossName = battleAiById.get(world.bossAiId)?.name ?? bossLesson?.title ?? world.title;
+  const lessonPath = lessons.filter((lesson) => lesson.id !== bossLesson?.id).map((lesson) => ({
+    id: lesson.id,
+    label: lesson.title,
+    complete: save.progress.completedLessonIds.includes(lesson.id),
+  }));
+  const checkpoints = bossLesson
+    ? lessonPath.concat({
+        id: bossLesson.id,
+        label: `Boss: ${bossName}`,
+        complete: save.progress.bossWins.includes(world.bossAiId),
+      })
+    : lessonPath;
+  const nextCheckpoint =
+    checkpoints.find((item) => !item.complete)?.id ?? checkpoints[0]?.id ?? lessons[0]?.id ?? '';
+
+  return (
+    <Link
+      to={`/lesson/${nextCheckpoint}`}
+      aria-label={`Open ${world.title}`}
+      style={learn.chapterLink}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+    >
+      <section style={learn.chapterRow}>
+        <div style={learn.rail}>
+          <div
+            role="img"
+            aria-label={cleared ? `Chapter ${world.order + 1} complete` : `Chapter ${world.order + 1}`}
+            style={{
+              ...learn.marker,
+              ...(cleared ? learn.markerComplete : learn.markerPending),
+              ...(hovered ? learn.markerHover : null),
+            }}
+          >
+            {cleared ? '✓' : world.order + 1}
+          </div>
+          {world.order < curriculumWorlds.length - 1 ? <div style={learn.railLine} /> : null}
+        </div>
+        <article
+          style={{
+            ...learn.chapterCard,
+            ...(cleared ? learn.chapterCardComplete : null),
+            ...(hovered ? learn.chapterCardHover : null),
+          }}
+        >
+          <div style={learn.chapterHeader}>
+            <h2 style={learn.chapterTitle}>{world.title}</h2>
+            <p style={learn.chapterSubtitle}>{world.subtitle}</p>
+          </div>
+          <div style={learn.path}>
+            {checkpoints.map((item, index) => (
+              <Fragment key={item.id}>
+                <span style={learn.pathStep}>
+                  {item.complete ? (
+                    <span aria-hidden="true" style={learn.pathCheck}>
+                      ✓
+                    </span>
+                  ) : null}
+                  <span style={learn.pathLabel}>{item.label}</span>
+                </span>
+                {index < checkpoints.length - 1 ? <span style={learn.arrow}>→</span> : null}
+              </Fragment>
+            ))}
+          </div>
+        </article>
+      </section>
+    </Link>
   );
 }
 
@@ -89,6 +113,10 @@ const learn: Record<string, CSSProperties> = {
   timeline: {
     display: 'grid',
     gap: '0.8rem',
+  },
+  chapterLink: {
+    textDecoration: 'none',
+    color: 'inherit',
   },
   chapterRow: {
     display: 'grid',
@@ -123,6 +151,9 @@ const learn: Record<string, CSSProperties> = {
     border: '1px solid rgba(172, 209, 87, 0.9)',
     boxShadow: '0 10px 24px rgba(172, 209, 87, 0.22)',
   },
+  markerHover: {
+    borderColor: 'rgba(245, 246, 247, 0.95)',
+  },
   railLine: {
     width: '2px',
     borderRadius: '999px',
@@ -140,6 +171,9 @@ const learn: Record<string, CSSProperties> = {
   },
   chapterCardComplete: {
     borderColor: 'rgba(172, 209, 87, 0.34)',
+  },
+  chapterCardHover: {
+    borderColor: 'rgba(245, 246, 247, 0.95)',
   },
   chapterHeader: {
     display: 'grid',
@@ -163,15 +197,19 @@ const learn: Record<string, CSSProperties> = {
     gap: '0.32rem 0.46rem',
     lineHeight: 1.45,
   },
-  pathLink: {
-    color: 'var(--ink)',
-    textDecoration: 'none',
-    fontSize: '0.92rem',
-    borderBottom: '1px solid rgba(245, 246, 247, 0.14)',
+  pathStep: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.28rem',
   },
-  pathLinkComplete: {
+  pathCheck: {
     color: 'var(--success)',
-    borderBottomColor: 'rgba(172, 209, 87, 0.42)',
+    fontWeight: 900,
+    fontSize: '0.92rem',
+  },
+  pathLabel: {
+    color: 'var(--ink)',
+    fontSize: '0.92rem',
   },
   arrow: {
     color: 'var(--muted)',

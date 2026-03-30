@@ -149,6 +149,10 @@ describe('app routes', () => {
     });
     expect(screen.getByText('Zero to First Move')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Chapter 1' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Zero to First Move' })).toHaveAttribute(
+      'href',
+      '/lesson/world-0-board-and-gravity',
+    );
     expect(screen.getByText('Boss: Warmup Bot')).toBeInTheDocument();
     expect(screen.getAllByText(/^Learn$/)).toHaveLength(1);
     expect(screen.queryByText('Unlocked')).not.toBeInTheDocument();
