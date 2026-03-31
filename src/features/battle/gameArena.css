@@ -181,52 +181,55 @@
 
 .game-arena__moveList {
   display: grid;
-  gap: 0.32rem;
-  height: 11.4rem;
+  gap: 0.16rem;
+  height: 8.4rem;
   overflow-y: auto;
-  padding-right: 0.2rem;
+  padding-right: 0.12rem;
 }
 
 .game-arena__moveRow {
   display: grid;
-  grid-template-columns: 2rem repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-  align-items: center;
+  grid-template-columns: 1.45rem repeat(2, minmax(0, 1fr));
+  gap: 0.2rem 0.4rem;
+  align-items: baseline;
 }
 
 .game-arena__moveNumber {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
 .game-arena__moveButton,
 .game-arena__moveGap {
-  min-height: 2rem;
-  padding: 0.4rem 0.5rem;
-  border-radius: 0.65rem;
-  text-align: center;
+  min-height: 0;
+  padding: 0.04rem 0;
+  border-radius: 0;
+  text-align: left;
   font: inherit;
   font-weight: 700;
+  font-size: 0.82rem;
+  line-height: 1.25;
 }
 
 .game-arena__moveButton {
-  border: 1px solid rgba(245, 246, 247, 0.08);
-  background: rgba(10, 10, 35, 0.82);
-  color: var(--ink);
+  border: 0;
+  background: transparent;
+  color: rgba(245, 246, 247, 0.86);
   cursor: pointer;
 }
 
 .game-arena__moveButton.is-active,
 .game-arena__moveButton:hover,
 .game-arena__moveButton:focus-visible {
-  border-color: rgba(241, 190, 50, 0.32);
-  background: rgba(241, 190, 50, 0.14);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
   outline: none;
 }
 
 .game-arena__moveGap {
-  color: rgba(245, 246, 247, 0.35);
+  color: rgba(245, 246, 247, 0.28);
 }
 
 @media (min-width: 980px) {
