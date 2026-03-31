@@ -183,6 +183,29 @@ describe('GameArena', () => {
     expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
   });
 
+  it("does not replace the last human coach note with CPU-turn text", async () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByText('Warmup Bot is choosing.')).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(950);
+    });
+
+    expect(screen.queryByText('Warmup Bot is choosing.')).not.toBeInTheDocument();
+  });
+
   it('resets immediately after a finished game with the reset hotkey', async () => {
     render(
       <MemoryRouter>

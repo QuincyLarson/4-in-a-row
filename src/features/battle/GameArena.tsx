@@ -45,6 +45,11 @@ type MoveLogRow = {
   cpu?: MoveLogEntry;
 };
 
+type HumanAnalysisState = {
+  analysis: MoveAnalysis;
+  humanPly: number;
+};
+
 const AI_ID_TO_LEVEL: Record<string, number> = {
   'warmup-bot': 0,
   'block-baron': 1,
@@ -93,7 +98,7 @@ function GameArenaSession({
   const [thinking, setThinking] = useState(
     Boolean(aiId && baseBoard.turn === 'cpu' && boardOutcome(baseBoard) === 'playing'),
   );
-  const [analysis, setAnalysis] = useState<MoveAnalysis | null>(null);
+  const [analysisState, setAnalysisState] = useState<HumanAnalysisState | null>(null);
   const [previewVisible, setPreviewVisible] = useState(true);
   const [replayPly, setReplayPly] = useState<number | null>(null);
   const [outcomeVisible, setOutcomeVisible] = useState(false);
@@ -111,6 +116,10 @@ function GameArenaSession({
   const replayBoard =
     replayPly !== null ? boardFromSessionReplay(baseBoard, sessionMoves, replayPly) : null;
   const displayBoard = replayBoard ?? board;
+  const visibleAnalysis =
+    analysisState && board.moves.length <= analysisState.humanPly + 1
+      ? analysisState.analysis
+      : null;
   const activePreview = nearestPlayable(board, previewColumn ?? 3);
   const outcome = boardOutcome(board);
   const result =
@@ -291,7 +300,7 @@ function GameArenaSession({
     }
 
     if (!aiId) {
-      setAnalysis(null);
+      setAnalysisState(null);
       onHumanResolvedMove?.(column, null);
       return;
     }
@@ -301,7 +310,10 @@ function GameArenaSession({
       column,
       AI_ID_TO_LEVEL.oracle,
     );
-    setAnalysis(nextAnalysis);
+    setAnalysisState({
+      analysis: nextAnalysis,
+      humanPly: nextBoard.moves.length,
+    });
     onHumanResolvedMove?.(column, nextAnalysis);
   }
 
@@ -362,7 +374,7 @@ function GameArenaSession({
     setPreviewVisible(true);
     setPreviewColumn(nearestPlayable(baseBoard, 3));
     setHintColumn(null);
-    setAnalysis(null);
+    setAnalysisState(null);
     setReplayPly(null);
     setOutcomeVisible(false);
     setThinking(Boolean(aiId && baseBoard.turn === 'cpu' && boardOutcome(baseBoard) === 'playing'));
@@ -388,7 +400,7 @@ function GameArenaSession({
     setPreviewVisible(true);
     setPreviewColumn(nearestPlayable(reconstructed, activePreview ?? 3));
     setHintColumn(null);
-    setAnalysis(null);
+    setAnalysisState(null);
     setReplayPly(null);
     setOutcomeVisible(false);
     setThinking(
@@ -540,9 +552,9 @@ function GameArenaSession({
           <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
               <div className="game-arena__coachHeader">
-                {analysis ? (
-                  <span className={`game-arena__coachQuality game-arena__coachQuality--${analysisTone(analysis)}`}>
-                    {analysisToneLabel(analysis)}
+                {visibleAnalysis ? (
+                  <span className={`game-arena__coachQuality game-arena__coachQuality--${analysisTone(visibleAnalysis)}`}>
+                    {analysisToneLabel(visibleAnalysis)}
                   </span>
                 ) : null}
                 <h3 className="game-arena__panelTitle">Coach</h3>
@@ -550,7 +562,7 @@ function GameArenaSession({
             </div>
             <div className="game-arena__analysis">
               <p className="game-arena__bodyCopy">
-                {coachCopy(result, thinking, analysis, hintColumn, aiMeta?.name)}
+                {coachCopy(result, visibleAnalysis, hintColumn)}
               </p>
             </div>
           </section>
@@ -738,10 +750,8 @@ function statusText(
 
 function coachCopy(
   result: 'win' | 'loss' | 'draw' | null,
-  thinking: boolean,
   analysis: MoveAnalysis | null,
   hintColumn: number | null,
-  aiName?: string,
 ) {
   if (hintColumn !== null) {
     return `Try column ${hintColumn + 1}.`;
@@ -754,9 +764,6 @@ function coachCopy(
   }
   if (result === 'draw') {
     return 'Solid hold.';
-  }
-  if (thinking) {
-    return `${aiName ?? 'CPU'} is choosing.`;
   }
   if (analysis) {
     return analysis.bestMove !== null
