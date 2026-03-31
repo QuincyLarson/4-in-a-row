@@ -108,7 +108,7 @@ describe('app routes', () => {
     expect(screen.getByRole('button', { name: 'Beat Mirror Master' })).toBeDisabled();
   });
 
-  it('hydrates the profile name from saved progress and round-trips import and export', async () => {
+  it('renders the simplified profile settings column and confirms before reset', async () => {
     const save = makeSave();
     const importedSave = makeSave();
 
@@ -126,6 +126,7 @@ describe('app routes', () => {
     expect(screen.queryByText('Sound cues')).not.toBeInTheDocument();
     expect(screen.getByText('Piece styling')).toBeInTheDocument();
     expect(screen.getByText('CPU pace')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Export / Import Progress' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
@@ -141,6 +142,16 @@ describe('app routes', () => {
     await waitFor(() => {
       expect(screen.getByText('Save imported successfully.')).toBeInTheDocument();
     });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
+    expect(screen.getByRole('dialog', { name: 'Reset progress?' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss reset warning' }));
+    expect(screen.queryByRole('dialog', { name: 'Reset progress?' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset progress' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog', { name: 'Reset progress?' })).not.toBeInTheDocument();
   });
 
   it('redirects the retired review route back to learn', async () => {
