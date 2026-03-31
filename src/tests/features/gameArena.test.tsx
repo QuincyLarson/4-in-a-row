@@ -223,8 +223,9 @@ describe('GameArena', () => {
     const coachPanel = screen.getByRole('heading', { name: 'Coach' }).closest('section');
     const coachLines = container.querySelectorAll('.game-arena__analysis .game-arena__bodyCopy');
 
-    expect(screen.getByText(/^You played D/i)).toBeInTheDocument();
+    expect(screen.getByText(/claimed the center column/i)).toBeInTheDocument();
     expect(coachLines.length).toBeGreaterThan(1);
+    expect(screen.queryByText(/better:/i)).not.toBeInTheDocument();
     expect(coachPanel?.className).toContain('game-arena__panel--coachFlash');
 
     await act(async () => {

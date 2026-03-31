@@ -8,8 +8,10 @@ import {
   chooseBattleMove,
   cloneBoard,
   createBoard,
+  findWinningMoves,
   getDropRow,
   legalMoves,
+  opponent,
   winningLinesFor,
   type BoardState,
   type MoveAnalysis,
@@ -47,6 +49,8 @@ type MoveLogRow = {
 
 type HumanAnalysisState = {
   analysis: MoveAnalysis;
+  boardBefore: BoardState;
+  playedColumn: number;
 };
 
 const AI_ID_TO_LEVEL: Record<string, number> = {
@@ -118,6 +122,7 @@ function GameArenaSession({
   const replayBoard =
     replayPly !== null ? boardFromSessionReplay(baseBoard, sessionMoves, replayPly) : null;
   const displayBoard = replayBoard ?? board;
+  const visibleAnalysisState = analysisState;
   const visibleAnalysis = analysisState?.analysis ?? null;
   const activePreview = nearestPlayable(board, previewColumn ?? 3);
   const outcome = boardOutcome(board);
@@ -143,7 +148,7 @@ function GameArenaSession({
   const nextAi = aiId ? nextLadderAi(aiId) : null;
   const canAdvance = result === 'win' && nextAi !== null && mode !== 'lesson';
   const controlsDisabled = replayPly !== null;
-  const coachLines = coachCopy(result, visibleAnalysis, hintColumn);
+  const coachLines = coachCopy(result, visibleAnalysisState, hintColumn);
   const canDrop = Boolean(
     !controlsDisabled &&
       activePreview !== null &&
@@ -319,6 +324,8 @@ function GameArenaSession({
     }
     setAnalysisState({
       analysis: nextAnalysis,
+      boardBefore,
+      playedColumn: column,
     });
     triggerCoachFlash(
       coachFlashTimeoutRef,
@@ -805,7 +812,7 @@ function statusText(
 
 function coachCopy(
   result: 'win' | 'loss' | 'draw' | null,
-  analysis: MoveAnalysis | null,
+  analysisState: HumanAnalysisState | null,
   hintColumn: number | null,
 ) {
   if (hintColumn !== null) {
@@ -814,8 +821,8 @@ function coachCopy(
       'It is the cleanest practical move in this position.',
     ];
   }
-  if (analysis) {
-    return analysisCopy(analysis);
+  if (analysisState) {
+    return analysisCopy(analysisState);
   }
   if (result === 'win') {
     return ['Clean finish.', 'You converted the final chance and closed the game.'];
@@ -835,52 +842,219 @@ function coachCopy(
   ];
 }
 
-function analysisCopy(analysis: MoveAnalysis) {
-  const played = analysis.playedMove !== null ? columnLetter(analysis.playedMove) : null;
-  const best = analysis.bestMove !== null ? columnLetter(analysis.bestMove) : null;
+function analysisCopy({ analysis, boardBefore, playedColumn }: HumanAnalysisState) {
+  const row = getDropRow(boardBefore, playedColumn) ?? 0;
+  const playedSquare = `${columnLetter(playedColumn)}${row + 1}`;
+  const boardAfter = applyMove(boardBefore, playedColumn);
+  const side = boardBefore.turn;
+  const otherSide = opponent(side);
+  const opponentWinsBefore = findWinningMoves(boardBefore, otherSide);
+  const opponentWinsAfter = findWinningMoves(boardAfter, otherSide);
+  const blockedThreats = opponentWinsBefore.filter((column) => !opponentWinsAfter.includes(column));
+  const ourWinsAfter = findWinningMoves(boardAfter, side);
+  const line = strongestLineThroughMove(boardAfter, side, playedColumn, row);
+  const headline = buildMoveHeadline(
+    playedSquare,
+    boardAfter,
+    playedColumn,
+    row,
+    blockedThreats,
+    ourWinsAfter,
+    line,
+  );
+  const tacticalLine = buildTacticalLine(boardAfter, blockedThreats, opponentWinsAfter, ourWinsAfter, line);
+  const qualityLine = buildQualityLine(analysis.quality, boardAfter, opponentWinsAfter, ourWinsAfter, line);
 
-  if (analysis.quality === 'best') {
-    return [
-      played
-        ? `You played ${played}, and that matches the best line.`
-        : 'That matches the best line.',
-      'You kept the pressure where it belonged and did not hand back an easy tactical reply.',
-    ];
+  return [headline, tacticalLine, qualityLine].filter(Boolean);
+}
+
+function buildMoveHeadline(
+  playedSquare: string,
+  boardAfter: BoardState,
+  playedColumn: number,
+  row: number,
+  blockedThreats: number[],
+  ourWinsAfter: number[],
+  line: LineSummary,
+) {
+  if (boardAfter.winner === 'human') {
+    return `You played ${playedSquare} and completed a ${line.direction} four on the spot.`;
+  }
+  if (blockedThreats.length > 0 && ourWinsAfter.length > 0) {
+    return `You played ${playedSquare}, blocked the urgent threat, and kept a forcing reply in hand.`;
+  }
+  if (blockedThreats.length > 0) {
+    return `You played ${playedSquare} and shut down the immediate threat.`;
+  }
+  if (ourWinsAfter.length >= 2) {
+    return `You played ${playedSquare} and created multiple winning threats for the next turn.`;
+  }
+  if (ourWinsAfter.length === 1) {
+    return `You played ${playedSquare} and created a direct winning threat.`;
+  }
+  if (line.length >= 3) {
+    return `You played ${playedSquare} and stretched your ${line.direction} chain to ${line.length}.`;
+  }
+  if (playedColumn === 3) {
+    return `You played ${playedSquare} and claimed the center column.`;
+  }
+  if (playedColumn === 2 || playedColumn === 4) {
+    return `You played ${playedSquare} and kept pressure next to the center.`;
+  }
+  if (row > 0) {
+    return `You played ${playedSquare} on support and added another useful checker to the stack.`;
+  }
+  return `You played ${playedSquare} and developed a new lane on the board.`;
+}
+
+function buildTacticalLine(
+  boardAfter: BoardState,
+  blockedThreats: number[],
+  opponentWinsAfter: number[],
+  ourWinsAfter: number[],
+  line: LineSummary,
+) {
+  const details: string[] = [];
+
+  if (blockedThreats.length > 0) {
+    details.push(
+      blockedThreats.length === 1
+        ? `It takes away the opponent's immediate win in ${columnLetter(blockedThreats[0])}.`
+        : `It removes immediate wins in ${formatColumns(blockedThreats)}.`,
+    );
   }
 
-  if (analysis.quality === 'good') {
-    return [
-      played && best
-        ? `You played ${played}. It works, but ${best} was a little cleaner.`
-        : 'Good practical move.',
-      'Your move keeps the game playable, but the stronger line would have preserved a bit more pressure and denied more counterplay.',
-    ];
+  if (boardAfter.winner !== 'human' && ourWinsAfter.length > 0) {
+    details.push(
+      ourWinsAfter.length === 1
+        ? `It now threatens a win next turn in ${columnLetter(ourWinsAfter[0])}.`
+        : `It now threatens wins in ${formatColumns(ourWinsAfter)}, so the reply is forced.`,
+    );
   }
 
-  if (analysis.quality === 'inaccuracy') {
-    return [
-      played && best
-        ? `You played ${played}, but ${best} kept more of the edge.`
-        : 'That move gives back some of the edge.',
-      'Nothing collapses immediately, but the board becomes easier for the opponent to answer. Check wins, blocks, and center leverage before slower moves.',
-    ];
+  if (details.length === 0 && line.length >= 2) {
+    details.push(
+      line.length >= 3
+        ? `That checker matters because it turns your ${line.direction} shape into a real threat.`
+        : `It adds to your ${line.direction} shape and gives you a cleaner structure to build from.`,
+    );
   }
 
-  if (analysis.quality === 'mistake') {
-    return [
-      played && best
-        ? `You played ${played}, but ${best} was the key move here.`
-        : 'That was a meaningful slip.',
-      'This move lowered the position enough to give the opponent a clearer plan. The better line kept your threats alive and cut off easier replies.',
-    ];
+  if (details.length === 0 && opponentWinsAfter.length === 0) {
+    details.push('It keeps the board quiet enough that the opponent does not get an immediate tactical shot back.');
   }
 
-  return [
-    played && best
-      ? `You played ${played}, but ${best} was urgent.`
-      : 'That move missed an urgent idea.',
-    'It gives away a major tactical resource. In spots like this, scan for immediate wins and forced blocks before anything quieter.',
+  return details.join(' ');
+}
+
+function buildQualityLine(
+  quality: MoveAnalysis['quality'],
+  boardAfter: BoardState,
+  opponentWinsAfter: number[],
+  ourWinsAfter: number[],
+  line: LineSummary,
+) {
+  if (boardAfter.winner === 'human') {
+    return 'That is exactly the kind of forcing finish you want to spot right away.';
+  }
+
+  if (opponentWinsAfter.length > 0) {
+    return opponentWinsAfter.length === 1
+      ? `The problem is that the opponent still has an immediate answer in ${columnLetter(opponentWinsAfter[0])}.`
+      : `The problem is that the opponent still has immediate answers in ${formatColumns(opponentWinsAfter)}.`;
+  }
+
+  if (quality === 'best') {
+    return ourWinsAfter.length > 0
+      ? 'It keeps the initiative with you and makes the opponent answer your threat instead of starting their own.'
+      : 'It improves your shape without giving back the initiative, which is exactly what strong practical play looks like.';
+  }
+
+  if (quality === 'good') {
+    return line.length >= 3
+      ? `It builds a useful ${line.direction} shape and keeps your plan healthy, even if the game is not forced yet.`
+      : 'It is a sound practical move that keeps the position under control and avoids giving away a cheap tactic.';
+  }
+
+  if (quality === 'inaccuracy') {
+    return 'It has some value, but it does not force enough from the opponent, so the position becomes easier for them to handle.';
+  }
+
+  if (quality === 'mistake') {
+    return 'It places a checker in a usable spot, but it does not solve enough at once, so the opponent gets too much freedom on the next turn.';
+  }
+
+  return 'It uses a turn without handling the most urgent tactical issue, which is why the position swings so sharply afterward.';
+}
+
+type LineSummary = {
+  length: number;
+  direction: 'horizontal' | 'vertical' | 'diagonal';
+};
+
+function strongestLineThroughMove(
+  board: BoardState,
+  side: BoardState['turn'],
+  col: number,
+  row: number,
+) {
+  const directions: Array<{
+    direction: LineSummary['direction'];
+    deltaCol: number;
+    deltaRow: number;
+  }> = [
+    { direction: 'horizontal' as const, deltaCol: 1, deltaRow: 0 },
+    { direction: 'vertical' as const, deltaCol: 0, deltaRow: 1 },
+    { direction: 'diagonal' as const, deltaCol: 1, deltaRow: 1 },
+    { direction: 'diagonal' as const, deltaCol: 1, deltaRow: -1 },
   ];
+
+  return directions.reduce<LineSummary>(
+    (best, current) => {
+      const length =
+        1 +
+        countDirection(board, side, col, row, current.deltaCol, current.deltaRow) +
+        countDirection(board, side, col, row, -current.deltaCol, -current.deltaRow);
+
+      if (length > best.length) {
+        return { length, direction: current.direction };
+      }
+
+      return best;
+    },
+    { length: 1, direction: 'horizontal' },
+  );
+}
+
+function countDirection(
+  board: BoardState,
+  side: BoardState['turn'],
+  startCol: number,
+  startRow: number,
+  deltaCol: number,
+  deltaRow: number,
+) {
+  let length = 0;
+  let col = startCol + deltaCol;
+  let row = startRow + deltaRow;
+
+  while (col >= 0 && col < 7 && row >= 0 && row < 6) {
+    const owner = side === 'human'
+      ? ((board.human & (1n << BigInt(col * 7 + row))) !== 0n ? 'human' : null)
+      : ((board.cpu & (1n << BigInt(col * 7 + row))) !== 0n ? 'cpu' : null);
+    if (owner !== side) {
+      break;
+    }
+    length += 1;
+    col += deltaCol;
+    row += deltaRow;
+  }
+
+  return length;
+}
+
+function formatColumns(columns: number[]) {
+  return columns.map((column) => columnLetter(column)).join(', ');
 }
 
 function analysisTone(analysis: MoveAnalysis): 'best' | 'good' | 'bad' {
