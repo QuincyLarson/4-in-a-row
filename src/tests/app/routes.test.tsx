@@ -92,7 +92,9 @@ describe('app routes', () => {
   it('gates the ladder and falls back to the first unlocked battle', async () => {
     const firstRender = renderRoute('/battle');
 
-    await screen.findByRole('heading', { name: 'Battle the ladder.' });
+    await screen.findByRole('button', { name: 'Current match' });
+    expect(screen.queryByText('Battle the ladder.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Current: Level 0')).not.toBeInTheDocument();
     expect(screen.getByText('Level 2: Center Sentinel')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Beat / }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Current match' })).toBeInTheDocument();
@@ -100,7 +102,7 @@ describe('app routes', () => {
     firstRender.unmount();
     renderRoute('/play?ai=endgame-engine');
 
-    await screen.findByRole('heading', { name: 'Battle the ladder.' });
+    await screen.findByRole('button', { name: 'Current match' });
     expect(screen.getAllByText('Level 0: Warmup Bot').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Current match' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Beat Mirror Master' })).toBeDisabled();

@@ -5,7 +5,7 @@ import { battleAis } from '../../../content';
 import { GameArena } from '../../../features/battle/GameArena';
 import { findReviewTarget, isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
+import { Card, CardGrid, Chip, InlineButton } from './shared';
 
 export function BattlePage() {
   const {
@@ -25,21 +25,11 @@ export function BattlePage() {
   );
 
   if (!selected) {
-    return <PageSection title="Battle the ladder." body="No battle profiles are available." />;
+    return <section style={battle.page}>No battle profiles are available.</section>;
   }
 
   return (
-    <PageSection
-      eyebrow="Battle"
-      title="Battle the ladder."
-      body="Pick a level, play in place, and unlock the next one by winning."
-      actions={
-        <>
-          <Chip tone="warning">Current: Level {selected.level}</Chip>
-          <Chip>{selected.name}</Chip>
-        </>
-      }
-    >
+    <section style={battle.page}>
       <GameArena
         aiId={selected.id}
         title={`Level ${selected.level}: ${selected.name}`}
@@ -123,11 +113,15 @@ export function BattlePage() {
           );
         })}
       </CardGrid>
-    </PageSection>
+    </section>
   );
 }
 
 const battle = {
+  page: {
+    display: 'grid',
+    gap: '0.95rem',
+  },
   copy: {
     margin: 0,
     color: 'var(--muted)',
