@@ -206,7 +206,7 @@ describe('GameArena', () => {
     expect(screen.queryByText('Warmup Bot is choosing.')).not.toBeInTheDocument();
   });
 
-  it('flashes in updated coach advice and keeps it detailed', async () => {
+  it('updates coach advice once per move and keeps it detailed', async () => {
     const { container } = render(
       <MemoryRouter>
         <AppStateProvider>
@@ -226,13 +226,7 @@ describe('GameArena', () => {
     expect(screen.getByText(/claimed the center column/i)).toBeInTheDocument();
     expect(coachLines.length).toBeGreaterThan(1);
     expect(screen.queryByText(/better:/i)).not.toBeInTheDocument();
-    expect(coachPanel?.className).toContain('game-arena__panel--coachFlash');
-
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(800);
-    });
-
-    expect(coachPanel?.className).not.toContain('game-arena__panel--coachFlash');
+    expect(coachPanel?.className).toBe('game-arena__panel');
   });
 
   it('resets immediately after a finished game with the reset hotkey', async () => {

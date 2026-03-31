@@ -105,12 +105,10 @@ function GameArenaSession({
   const [previewVisible, setPreviewVisible] = useState(true);
   const [replayPly, setReplayPly] = useState<number | null>(null);
   const [outcomeVisible, setOutcomeVisible] = useState(false);
-  const [coachFlashActive, setCoachFlashActive] = useState(false);
   const finishedRef = useRef(false);
   const soundTimeoutsRef = useRef<number[]>([]);
   const previewTimeoutRef = useRef<number | null>(null);
   const outcomeTimeoutRef = useRef<number | null>(null);
-  const coachFlashTimeoutRef = useRef<number | null>(null);
   const analysisRequestRef = useRef(0);
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
@@ -165,7 +163,6 @@ function GameArenaSession({
       clearQueuedSounds(soundTimeoutsRef);
       clearPreviewLock(previewTimeoutRef);
       clearOutcomeDelay(outcomeTimeoutRef);
-      clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
     };
   }, []);
 
@@ -327,11 +324,6 @@ function GameArenaSession({
       boardBefore,
       playedColumn: column,
     });
-    triggerCoachFlash(
-      coachFlashTimeoutRef,
-      setCoachFlashActive,
-      save.settings.reducedMotion,
-    );
     onHumanResolvedMove?.(column, nextAnalysis);
   }
 
@@ -387,7 +379,6 @@ function GameArenaSession({
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
     clearOutcomeDelay(outcomeTimeoutRef);
-    clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
     analysisRequestRef.current += 1;
     cpuReadyAtRef.current = 0;
     setBoard(baseBoard);
@@ -408,7 +399,6 @@ function GameArenaSession({
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
     clearOutcomeDelay(outcomeTimeoutRef);
-    clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
     analysisRequestRef.current += 1;
     cpuReadyAtRef.current = 0;
     const trim = aiId ? 2 : 1;
@@ -571,11 +561,7 @@ function GameArenaSession({
             </div>
           </section>
 
-          <section
-            className={`game-arena__panel${
-              coachFlashActive ? ' game-arena__panel--coachFlash' : ''
-            }${coachFlashActive && save.settings.reducedMotion ? ' game-arena__panel--coachFlashReduced' : ''}`}
-          >
+          <section className="game-arena__panel">
             <div className="game-arena__panelHeader">
               <div className="game-arena__coachHeader">
                 {visibleAnalysis ? (
@@ -755,30 +741,6 @@ function clearOutcomeDelay(timeoutRef: MutableRefObject<number | null>) {
     window.clearTimeout(timeoutRef.current);
     timeoutRef.current = null;
   }
-}
-
-function triggerCoachFlash(
-  timeoutRef: MutableRefObject<number | null>,
-  setFlashActive: (value: boolean) => void,
-  reducedMotion: boolean,
-) {
-  clearCoachFlash(timeoutRef, setFlashActive);
-  setFlashActive(true);
-  timeoutRef.current = window.setTimeout(() => {
-    timeoutRef.current = null;
-    setFlashActive(false);
-  }, reducedMotion ? 180 : 760);
-}
-
-function clearCoachFlash(
-  timeoutRef: MutableRefObject<number | null>,
-  setFlashActive: (value: boolean) => void,
-) {
-  if (timeoutRef.current !== null) {
-    window.clearTimeout(timeoutRef.current);
-    timeoutRef.current = null;
-  }
-  setFlashActive(false);
 }
 
 function statusText(
