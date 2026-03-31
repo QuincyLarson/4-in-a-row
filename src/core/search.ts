@@ -636,7 +636,7 @@ export function analyzeMove(
   playedColumn: number,
   profileOrId: number | AIProfile = ORACLE_ANALYSIS,
 ): MoveAnalysis {
-  const profile = resolveAIProfile(profileOrId);
+  const profile = analysisProfile(resolveAIProfile(profileOrId));
   if (!legalMoves(boardBeforeMove).includes(playedColumn)) {
     return {
       quality: 'blunder',
@@ -656,11 +656,11 @@ export function analyzeMove(
   const bestScore =
     bestMove === null
       ? bestResult.score
-      : scoreMoveHeuristic(boardBeforeMove, bestMove, profile);
+      : scoreAnalyzedMove(boardBeforeMove, bestMove, profile);
   const playedScore =
     bestMove !== null && playedColumn === bestMove
       ? bestScore
-      : scoreMoveHeuristic(boardBeforeMove, playedColumn, profile);
+      : scoreAnalyzedMove(boardBeforeMove, playedColumn, profile);
   const delta = Math.max(0, bestScore - playedScore);
   const quality = classifyScoreDelta(delta);
   const reason =
@@ -683,6 +683,36 @@ export function analyzeMove(
     delta,
     reason,
   };
+}
+
+function analysisProfile(profile: AIProfile): AIProfile {
+  return {
+    ...profile,
+    depth: Math.max(profile.depth, Math.min(profile.analysisDepth, profile.depth + 1)),
+    useOpeningBook: false,
+  };
+}
+
+function scoreAnalyzedMove(
+  boardBeforeMove: BoardState,
+  column: number,
+  profile: AIProfile,
+): number {
+  const boardAfterMove = applyMove(boardBeforeMove, column);
+
+  if (boardAfterMove.winner === boardBeforeMove.turn) {
+    return MATE_SCORE - 1;
+  }
+
+  if (boardAfterMove.isDraw) {
+    return 0;
+  }
+
+  const reply = chooseBattleMove(boardAfterMove, profile, {
+    resetTranspositionTable: false,
+  });
+
+  return -reply.score;
 }
 
 export function getBattleAiProfiles(): readonly AIProfile[] {

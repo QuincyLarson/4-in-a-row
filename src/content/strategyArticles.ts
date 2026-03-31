@@ -88,6 +88,33 @@ export const strategyArticles: StrategyArticle[] = [
     relatedLessonIds: ['world-6-parity-basics', 'world-6-odd-even-access', 'world-6-poisoned-moves'],
   }),
   article({
+    slug: 'how-learn-drop-4-coach-evaluates-moves',
+    title: 'How Learn Drop 4 Coach Evaluates Moves',
+    description: 'A short explanation of the tactical checks, continuation search, and positional heuristics behind the coach panel.',
+    keywords: ['connect 4 coach', 'connect 4 heuristics', 'move evaluation', 'analysis'],
+    sections: [
+      section(
+        'The scan starts with forced tactics',
+        'The coach first looks for immediate wins, immediate blocks, opening-book traps, and other urgent tactical checks. If the position is already forcing, that matters more than any quiet shape preference.',
+        ['Win now before anything else', 'Block a one-move loss before trying to improve shape', 'Respect forced replies and double threats'],
+      ),
+      section(
+        'It now judges continuations, not just the first picture',
+        'Earlier versions could overreact to the immediate look of a move because they scored the child position with a shallow heuristic. The coach now re-searches the resulting position from the opponent side and scores the continuation, which makes it much better at recognizing forcing ideas such as mates in two or moves that block and threaten at the same time.',
+      ),
+      section(
+        'When the line is not forced, shape still matters',
+        'If no side has a direct tactical sequence, the coach falls back on practical board heuristics: center control, playable threats, double-threat potential, supported diagonals, parity pressure, mobility, and whether the move leaves the opponent an immediate shot back.',
+        ['Center and adjacent-center columns keep more future lines alive', 'Supported threats matter more than decorative shapes', 'Parity and access matter more as the board fills'],
+      ),
+      section(
+        'Why the coach can still disagree with you',
+        'The coach is stronger than before, but it is still finite-depth search plus heuristics, not a solved endgame oracle on every move. In very deep or unusual positions it can still underrate a long forcing line, especially if the tactic sits beyond the current search budget. When that happens, the most trustworthy signal is whether your move removed the opponent threat, created a forced reply, or produced multiple winning continuations.',
+      ),
+    ],
+    relatedLessonIds: ['world-1-scan-order', 'world-4-fork-recognition', 'world-6-parity-basics'],
+  }),
+  article({
     slug: 'play-connect-4-online',
     title: 'Play Connect 4 Online',
     description: 'What to expect from a polished client-side Four in a Row app and how the learning loop works.',

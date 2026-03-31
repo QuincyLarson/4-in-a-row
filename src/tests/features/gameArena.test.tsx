@@ -183,6 +183,25 @@ describe('GameArena', () => {
     expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
   });
 
+  it('shows preloaded notation immediately when the board starts from an authored position', () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena
+            title="Preset"
+            description="Starts from a preloaded line"
+            mode="sandbox"
+            initialMoves={[4, 5, 4, 5]}
+          />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Replay move 1: D1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Replay move 2: E1' })).toBeInTheDocument();
+    expect(screen.queryByText('Moves appear here.')).not.toBeInTheDocument();
+  });
+
   it("does not replace the last human coach note with CPU-turn text", async () => {
     render(
       <MemoryRouter>

@@ -118,6 +118,9 @@ describe('app routes', () => {
 
     const nameInput = (await screen.findByLabelText('Name')) as HTMLInputElement;
     expect(nameInput.value).toBe('Quincy');
+    expect(
+      screen.getByRole('link', { name: 'Read how the coach evaluates moves' }),
+    ).toHaveAttribute('href', '/strategy/how-learn-drop-4-coach-evaluates-moves');
 
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     const textarea = screen.getAllByRole('textbox')[1] as HTMLTextAreaElement;
@@ -174,6 +177,10 @@ describe('app routes', () => {
     renderRoute('/strategy/play-connect-4-online');
     await screen.findByRole('heading', { name: 'Play Connect 4 Online' });
     expect(screen.getByText('Related lessons')).toBeInTheDocument();
+
+    renderRoute('/strategy/how-learn-drop-4-coach-evaluates-moves');
+    await screen.findByRole('heading', { name: 'How Learn Drop 4 Coach Evaluates Moves' });
+    expect(screen.getByText(/re-searches the resulting position from the opponent side/i)).toBeInTheDocument();
   });
 
 });

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { importSaveEnvelope } from '../../../storage/localSave';
 import { useAppState } from '../../state/useAppState';
@@ -105,6 +106,12 @@ export function ProfilePage() {
           <p style={profile.copy}>Low ping: the CPU releases a piece.</p>
           <p style={profile.copy}>Thunk: a piece lands in the grid.</p>
           <p style={profile.copy}>Win/loss chords: end-of-game feedback.</p>
+        </Card>
+
+        <Card title="Coach heuristics" body="See the tactical checks and positional rules behind the coach panel.">
+          <Link to="/strategy/how-learn-drop-4-coach-evaluates-moves" style={profile.link}>
+            Read how the coach evaluates moves
+          </Link>
         </Card>
 
         <Card title="Board Readability" body="Piece clarity and CPU tempo.">
@@ -248,5 +255,11 @@ const profile = {
   message: {
     margin: 0,
     color: 'var(--accent)',
+  },
+  link: {
+    color: 'var(--accent)',
+    textDecoration: 'underline',
+    textUnderlineOffset: '0.18em',
+    fontWeight: 600,
   },
 };

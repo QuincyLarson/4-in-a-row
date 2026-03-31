@@ -6,7 +6,6 @@ import {
   boardFromHumanMoves,
   boardOutcome,
   chooseBattleMove,
-  cloneBoard,
   createBoard,
   findWinningMoves,
   getDropRow,
@@ -113,12 +112,11 @@ function GameArenaSession({
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
-  const sessionMoves = board.moves.slice(baseBoard.moves.length);
-  const moveLog = useMemo(() => buildMoveLog(baseBoard, sessionMoves), [baseBoard, sessionMoves]);
+  const moveLog = useMemo(() => buildMoveLog(board.moves), [board.moves]);
   const replayEntry =
     replayPly !== null ? moveLog.find((entry) => entry.sessionPly === replayPly) ?? null : null;
   const replayBoard =
-    replayPly !== null ? boardFromSessionReplay(baseBoard, sessionMoves, replayPly) : null;
+    replayPly !== null ? boardFromReplay(board.moves, replayPly) : null;
   const displayBoard = replayBoard ?? board;
   const visibleAnalysisState = analysisState;
   const visibleAnalysis = analysisState?.analysis ?? null;
@@ -604,9 +602,7 @@ function GameArenaSession({
               <h3 className="game-arena__panelTitle">Moves</h3>
             </div>
             <div className="game-arena__moveList" aria-label="Move log">
-              {moveLog.length === 0 ? (
-                <p className="game-arena__bodyCopy">Moves appear here.</p>
-              ) : (
+              {moveLog.length > 0 ? (
                 <table className="game-arena__moveTable">
                   <tbody>
                     {moveRows(moveLog).map((row) => (
@@ -639,7 +635,7 @@ function GameArenaSession({
                     ))}
                   </tbody>
                 </table>
-              )}
+              ) : null}
             </div>
           </section>
         </aside>
@@ -666,19 +662,19 @@ function boardFromZeroBasedMoves(moves: number[]) {
   return board;
 }
 
-function boardFromSessionReplay(baseBoard: BoardState, sessionMoves: number[], ply: number) {
-  let replayBoard = cloneBoard(baseBoard);
-  for (const move of sessionMoves.slice(0, ply)) {
+function boardFromReplay(moves: number[], ply: number) {
+  let replayBoard = createBoard('human');
+  for (const move of moves.slice(0, ply)) {
     replayBoard = applyMove(replayBoard, move);
   }
   return replayBoard;
 }
 
-function buildMoveLog(baseBoard: BoardState, sessionMoves: number[]) {
-  let replayBoard = cloneBoard(baseBoard);
+function buildMoveLog(moves: number[]) {
+  let replayBoard = createBoard('human');
   const entries: MoveLogEntry[] = [];
 
-  sessionMoves.forEach((move, index) => {
+  moves.forEach((move, index) => {
     const row = (getDropRow(replayBoard, move) ?? 0) + 1;
     const side = replayBoard.turn;
     const turnNumber = Math.floor(replayBoard.moves.length / 2) + 1;
@@ -811,10 +807,7 @@ function coachCopy(
   if (result === 'draw') {
     return ['Solid hold.', 'You kept the position level and denied the loss.'];
   }
-  return [
-    'Make your move.',
-    'The coach keeps your last note on screen until the new analysis is ready.',
-  ];
+  return ['Make your move.'];
 }
 
 function analysisCopy({ analysis, boardBefore, playedColumn }: HumanAnalysisState) {
