@@ -85,7 +85,7 @@ describe('app routes', () => {
     renderRoute('/', save);
 
     await screen.findByRole('heading', {
-      name: 'A full curriculum from first move to near-perfect practical play.',
+      name: 'Perfect Play curriculum',
     });
   });
 
@@ -140,14 +140,14 @@ describe('app routes', () => {
     renderRoute('/review');
 
     await screen.findByRole('heading', {
-      name: 'A full curriculum from first move to near-perfect practical play.',
+      name: 'Perfect Play curriculum',
     });
   });
 
   it('renders the learn, about, credits, sandbox, and strategy surfaces', async () => {
     renderRoute('/learn');
     await screen.findByRole('heading', {
-      name: 'A full curriculum from first move to near-perfect practical play.',
+      name: 'Perfect Play curriculum',
     });
     expect(screen.getByText('Zero to First Move')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Chapter 1' })).toBeInTheDocument();

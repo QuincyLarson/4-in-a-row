@@ -14,7 +14,7 @@ export function LearnPage() {
   } = useAppState();
 
   return (
-    <PageSection title="A full curriculum from first move to near-perfect practical play.">
+    <PageSection title="Perfect Play curriculum">
       <div style={learn.timeline}>
         {curriculumWorlds.map((world) => {
           return <LearnChapterCard key={world.id} world={world} save={save} />;
@@ -59,8 +59,6 @@ function LearnChapterCard({
       style={learn.chapterLink}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => setHovered(true)}
-      onBlur={() => setHovered(false)}
     >
       <section style={learn.chapterRow}>
         <div style={learn.rail}>
