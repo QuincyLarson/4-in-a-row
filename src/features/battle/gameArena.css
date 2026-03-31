@@ -180,36 +180,47 @@
 }
 
 .game-arena__moveList {
-  display: grid;
-  gap: 0.16rem;
-  height: 8.4rem;
+  height: 6.6rem;
   overflow-y: auto;
   padding-right: 0.12rem;
 }
 
+.game-arena__moveTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
 .game-arena__moveRow {
-  display: grid;
-  grid-template-columns: 1.45rem repeat(2, minmax(0, 1fr));
-  gap: 0.2rem 0.4rem;
-  align-items: baseline;
+  border: 0;
 }
 
 .game-arena__moveNumber {
+  width: 1.45rem;
+  padding: 0.02rem 0.42rem 0.02rem 0;
+  text-align: left;
+  vertical-align: top;
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
+.game-arena__moveCell {
+  padding: 0.02rem 0.42rem 0.02rem 0;
+  vertical-align: top;
+}
+
 .game-arena__moveButton,
 .game-arena__moveGap {
+  display: inline-block;
   min-height: 0;
-  padding: 0.04rem 0;
+  padding: 0;
   border-radius: 0;
   text-align: left;
   font: inherit;
   font-weight: 700;
   font-size: 0.82rem;
-  line-height: 1.25;
+  line-height: 1.1;
 }
 
 .game-arena__moveButton {

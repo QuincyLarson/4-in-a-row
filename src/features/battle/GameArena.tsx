@@ -575,33 +575,38 @@ function GameArenaSession({
               {moveLog.length === 0 ? (
                 <p className="game-arena__bodyCopy">Moves appear here.</p>
               ) : (
-                moveRows(moveLog).map((row) => (
-                  <div key={row.turnNumber} className="game-arena__moveRow">
-                    <span className="game-arena__moveNumber">{row.turnNumber}.</span>
-                    {(['human', 'cpu'] as const).map((side) =>
-                      row[side] ? (
-                        <button
-                          key={`${row.turnNumber}-${side}`}
-                          type="button"
-                          className={`game-arena__moveButton${
-                            replayPly === row[side]?.sessionPly ? ' is-active' : ''
-                          }`}
-                          onMouseEnter={() => setReplayPly(row[side]?.sessionPly ?? null)}
-                          onMouseLeave={() => setReplayPly(null)}
-                          onFocus={() => setReplayPly(row[side]?.sessionPly ?? null)}
-                          onBlur={() => setReplayPly(null)}
-                          aria-label={`Replay move ${row[side]?.sessionPly}: ${row[side]?.label}`}
-                        >
-                          {row[side]?.label}
-                        </button>
-                      ) : (
-                        <span key={`${row.turnNumber}-${side}`} className="game-arena__moveGap">
-                          ...
-                        </span>
-                      ),
-                    )}
-                  </div>
-                ))
+                <table className="game-arena__moveTable">
+                  <tbody>
+                    {moveRows(moveLog).map((row) => (
+                      <tr key={row.turnNumber} className="game-arena__moveRow">
+                        <th scope="row" className="game-arena__moveNumber">
+                          {row.turnNumber}.
+                        </th>
+                        {(['human', 'cpu'] as const).map((side) => (
+                          <td key={`${row.turnNumber}-${side}`} className="game-arena__moveCell">
+                            {row[side] ? (
+                              <button
+                                type="button"
+                                className={`game-arena__moveButton${
+                                  replayPly === row[side]?.sessionPly ? ' is-active' : ''
+                                }`}
+                                onMouseEnter={() => setReplayPly(row[side]?.sessionPly ?? null)}
+                                onMouseLeave={() => setReplayPly(null)}
+                                onFocus={() => setReplayPly(row[side]?.sessionPly ?? null)}
+                                onBlur={() => setReplayPly(null)}
+                                aria-label={`Replay move ${row[side]?.sessionPly}: ${row[side]?.label}`}
+                              >
+                                {row[side]?.label}
+                              </button>
+                            ) : (
+                              <span className="game-arena__moveGap">...</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </section>
