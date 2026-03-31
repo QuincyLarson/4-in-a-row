@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { curriculumLessons } from '../../../content';
 import { importSaveEnvelope } from '../../../storage/localSave';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, InlineButton, PageSection } from './shared';
+import { Card, CardGrid, InlineButton } from './shared';
 
 export function ProfilePage() {
   const { state, actions } = useAppState();
@@ -12,6 +13,7 @@ export function ProfilePage() {
   const [transferText, setTransferText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
+  const totalLessons = curriculumLessons.length;
   const nameValue = editingName ? draftName : (state.save.profile.displayName ?? '');
 
   const stats = useMemo(
@@ -21,34 +23,22 @@ export function ProfilePage() {
       reviewDue: state.save.review.entries.filter(
         (entry) => new Date(entry.dueAt).getTime() <= now,
       ).length,
-      games: state.save.history.recentGames.length,
     }),
     [now, state.save],
   );
 
   return (
-    <PageSection
-      eyebrow="Profile"
-      title={state.save.profile.displayName || 'Local profile'}
-      body="Local settings, accessibility, and save transfer."
-    >
+    <section style={profile.page}>
       <CardGrid>
         <Card
-          title="Progress Snapshot"
-          body="A quick read on your local progress."
+          title="Progress"
           accent="var(--accent)"
-          footer={
-            <>
-              <Chip>{stats.lessons} lessons</Chip>
-              <Chip tone="success">{stats.bosses} boss clears</Chip>
-              <Chip>{stats.games} recent games</Chip>
-            </>
-          }
         >
+          <p style={profile.copy}>Completed lessons: {stats.lessons} of {totalLessons}</p>
+          <p style={profile.copy}>Cleared bosses: {stats.bosses}</p>
           <p style={profile.copy}>Review due: {stats.reviewDue}</p>
-          <p style={profile.copy}>Created: {new Date(state.save.profile.createdAt).toLocaleDateString()}</p>
         </Card>
-      <Card title="Display Name" body="Used only in this browser.">
+        <Card title="Display Name" body="Used only in this browser.">
           <label style={profile.label}>
             Name
             <input
@@ -101,56 +91,62 @@ export function ProfilePage() {
           </label>
         </Card>
 
-        <Card title="Sound cues" body="What each cue means.">
-          <p style={profile.copy}>High ping: your piece is released.</p>
-          <p style={profile.copy}>Low ping: the CPU releases a piece.</p>
-          <p style={profile.copy}>Thunk: a piece lands in the grid.</p>
-          <p style={profile.copy}>Win/loss chords: end-of-game feedback.</p>
-        </Card>
-
         <Card title="Coach heuristics" body="See the tactical checks and positional rules behind the coach panel.">
           <Link to="/strategy/how-learn-drop-4-coach-evaluates-moves" style={profile.link}>
             Read how the coach evaluates moves
           </Link>
         </Card>
 
-        <Card title="Board Readability" body="Piece clarity and CPU tempo.">
-          <label style={profile.toggle}>
-            <input
-              type="radio"
-              name="colorMode"
-              checked={state.save.settings.colorMode === 'pattern'}
-              onChange={() => actions.setColorMode('pattern')}
-            />
-            Pattern mode
-          </label>
-          <label style={profile.toggle}>
-            <input
-              type="radio"
-              name="colorMode"
-              checked={state.save.settings.colorMode === 'default'}
-              onChange={() => actions.setColorMode('default')}
-            />
-            Default color mode
-          </label>
-          <label style={profile.toggle}>
-            <input
-              type="radio"
-              name="cpuMoveSpeed"
-              checked={state.save.settings.cpuMoveSpeed === 'snappy'}
-              onChange={() => actions.setCpuMoveSpeed('snappy')}
-            />
-            Snappy CPU tempo
-          </label>
-          <label style={profile.toggle}>
-            <input
-              type="radio"
-              name="cpuMoveSpeed"
-              checked={state.save.settings.cpuMoveSpeed === 'instant'}
-              onChange={() => actions.setCpuMoveSpeed('instant')}
-            />
-            Instant CPU tempo
-          </label>
+        <Card title="Board options">
+          <fieldset style={profile.group}>
+            <legend style={profile.groupTitle}>Piece styling</legend>
+            <p style={profile.groupBody}>
+              Default uses plain color. Pattern adds marks to make yellow and blue easier to tell apart.
+            </p>
+            <label style={profile.toggle}>
+              <input
+                type="radio"
+                name="colorMode"
+                checked={state.save.settings.colorMode === 'default'}
+                onChange={() => actions.setColorMode('default')}
+              />
+              Default color mode
+            </label>
+            <label style={profile.toggle}>
+              <input
+                type="radio"
+                name="colorMode"
+                checked={state.save.settings.colorMode === 'pattern'}
+                onChange={() => actions.setColorMode('pattern')}
+              />
+              Pattern mode
+            </label>
+          </fieldset>
+
+          <fieldset style={profile.group}>
+            <legend style={profile.groupTitle}>CPU pace</legend>
+            <p style={profile.groupBody}>
+              Snappy gives the reply a short beat. Instant plays as soon as the board is ready.
+            </p>
+            <label style={profile.toggle}>
+              <input
+                type="radio"
+                name="cpuMoveSpeed"
+                checked={state.save.settings.cpuMoveSpeed === 'snappy'}
+                onChange={() => actions.setCpuMoveSpeed('snappy')}
+              />
+              Snappy CPU tempo
+            </label>
+            <label style={profile.toggle}>
+              <input
+                type="radio"
+                name="cpuMoveSpeed"
+                checked={state.save.settings.cpuMoveSpeed === 'instant'}
+                onChange={() => actions.setCpuMoveSpeed('instant')}
+              />
+              Instant CPU tempo
+            </label>
+          </fieldset>
         </Card>
       </CardGrid>
 
@@ -205,11 +201,15 @@ export function ProfilePage() {
         />
         {message ? <p style={profile.message}>{message}</p> : null}
       </Card>
-    </PageSection>
+    </section>
   );
 }
 
 const profile = {
+  page: {
+    display: 'grid',
+    gap: '0.95rem',
+  },
   copy: {
     margin: 0,
     color: 'var(--muted)',
@@ -236,6 +236,27 @@ const profile = {
     gap: '0.5rem',
     color: 'var(--muted)',
     fontSize: '0.9rem',
+  },
+  group: {
+    display: 'grid',
+    gap: '0.5rem',
+    padding: 0,
+    margin: 0,
+    border: 0,
+    minInlineSize: 0,
+  },
+  groupTitle: {
+    padding: 0,
+    marginBottom: '0.1rem',
+    color: 'var(--ink)',
+    fontSize: '0.88rem',
+    fontWeight: 700,
+  },
+  groupBody: {
+    margin: 0,
+    color: 'var(--muted)',
+    lineHeight: 1.45,
+    fontSize: '0.88rem',
   },
   transferButtons: {
     display: 'flex',

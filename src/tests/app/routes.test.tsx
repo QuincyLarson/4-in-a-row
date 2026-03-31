@@ -121,6 +121,12 @@ describe('app routes', () => {
     expect(
       screen.getByRole('link', { name: 'Read how the coach evaluates moves' }),
     ).toHaveAttribute('href', '/strategy/how-learn-drop-4-coach-evaluates-moves');
+    expect(screen.getByText('Completed lessons: 0 of 39')).toBeInTheDocument();
+    expect(screen.getByText('Cleared bosses: 0')).toBeInTheDocument();
+    expect(screen.queryByText('Local settings, accessibility, and save transfer.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sound cues')).not.toBeInTheDocument();
+    expect(screen.getByText('Piece styling')).toBeInTheDocument();
+    expect(screen.getByText('CPU pace')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
     const textarea = screen.getAllByRole('textbox')[1] as HTMLTextAreaElement;
