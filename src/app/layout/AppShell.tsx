@@ -2,8 +2,6 @@ import type { CSSProperties } from 'react';
 import { useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { strategyArticleBySlug } from '../../content';
-
 const navItems = [
   { to: '/learn', label: 'Learn' },
   { to: '/battle', label: 'Battle' },
@@ -12,7 +10,6 @@ const navItems = [
 
 export function AppShell() {
   const location = useLocation();
-  const breadcrumb = breadcrumbForPath(location.pathname);
 
   useEffect(() => {
     const title = titleForPath(location.pathname);
@@ -32,15 +29,16 @@ export function AppShell() {
           <NavLink to="/learn" style={shellStyles.brand}>
             Learn Drop 4
           </NavLink>
-          {breadcrumb ? <div style={shellStyles.breadcrumb}>{breadcrumb}</div> : <div style={shellStyles.spacer} />}
+          <div style={shellStyles.spacer} />
           <nav aria-label="Primary navigation" style={shellStyles.nav}>
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                style={({ isActive }) => ({
+                aria-current={isCurrentSection(item.to, location.pathname) ? 'page' : undefined}
+                style={() => ({
                   ...shellStyles.link,
-                  ...(isActive ? shellStyles.linkActive : {}),
+                  ...(isCurrentSection(item.to, location.pathname) ? shellStyles.linkActive : {}),
                 })}
               >
                 {item.label}
@@ -120,48 +118,39 @@ function descriptionForPath(pathname: string) {
   return 'Learn Drop 4 is a fast, local-only Connect Four trainer with lessons, battles, and review.';
 }
 
-function breadcrumbForPath(pathname: string) {
-  if (pathname === '/') {
-    return '';
+function isCurrentSection(to: string, pathname: string) {
+  if (to === '/learn') {
+    return (
+      pathname === '/' ||
+      pathname === '/learn' ||
+      pathname === '/learn/connect-4-course' ||
+      pathname.startsWith('/lesson/')
+    );
   }
-  if (pathname === '/learn' || pathname === '/learn/connect-4-course') {
-    return '';
+
+  if (to === '/battle') {
+    return pathname === '/battle' || pathname === '/play';
   }
-  if (pathname.startsWith('/lesson/')) {
-    return 'Learn';
+
+  if (to === '/profile') {
+    return pathname === '/profile';
   }
-  if (pathname === '/battle') {
-    return 'Battle';
-  }
-  if (pathname === '/profile') {
-    return 'Profile';
-  }
-  if (pathname === '/about') {
-    return 'About';
-  }
-  if (pathname.startsWith('/strategy/')) {
-    const slug = pathname.split('/').at(-1) ?? '';
-    const article = strategyArticleBySlug.get(slug);
-    return article ? `Strategy > ${article.title}` : 'Strategy';
-  }
-  if (pathname === '/sandbox') {
-    return 'Sandbox';
-  }
-  if (pathname === '/credits') {
-    return 'Credits';
-  }
-  return 'Learn Drop 4';
+
+  return pathname === to;
 }
 
 const shellStyles: Record<string, CSSProperties> = {
   frame: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
     minHeight: '100vh',
   },
   header: {
-    padding: '0.42rem 0.9rem 0',
-    justifyItems: 'center',
+    position: 'fixed',
+    inset: '0 0 auto',
+    zIndex: 30,
+    padding: '0 0.9rem',
+    background: 'rgba(10, 10, 35, 0.92)',
+    backdropFilter: 'blur(14px)',
+    borderBottom: '1px solid rgba(245, 246, 247, 0.08)',
   },
   topBar: {
     display: 'flex',
@@ -169,28 +158,15 @@ const shellStyles: Record<string, CSSProperties> = {
     gap: '0.65rem',
     width: '100%',
     maxWidth: 'var(--max-width)',
-    minHeight: '3.1rem',
-    padding: '0.38rem 0.72rem',
-    borderRadius: '0.95rem',
-    background: 'var(--panel)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-    boxShadow: 'var(--shadow)',
+    minHeight: '3.05rem',
+    margin: '0 auto',
   },
   brand: {
     color: 'var(--ink)',
     textDecoration: 'none',
-    fontSize: '1.1rem',
+    fontSize: '1rem',
     fontFamily: 'var(--font-display)',
     whiteSpace: 'nowrap',
-  },
-  breadcrumb: {
-    minWidth: 0,
-    flex: '1 1 auto',
-    color: 'var(--muted)',
-    fontSize: '0.82rem',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
   },
   spacer: {
     flex: '1 1 auto',
@@ -198,40 +174,36 @@ const shellStyles: Record<string, CSSProperties> = {
   },
   nav: {
     display: 'flex',
-    flexWrap: 'wrap',
+    alignItems: 'stretch',
     justifyContent: 'flex-end',
-    gap: '0.35rem',
+    gap: '1rem',
   },
   link: {
-    padding: '0.42rem 0.62rem',
-    borderRadius: '0.68rem',
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '3.05rem',
+    padding: '0.18rem 0',
     color: 'var(--muted)',
     textDecoration: 'none',
-    background: 'var(--surface)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
     fontSize: '0.84rem',
+    fontWeight: 700,
+    borderBottom: '2px solid transparent',
   },
   linkActive: {
     color: 'var(--ink)',
-    background: 'var(--surface-2)',
-    borderColor: 'rgba(241, 190, 50, 0.6)',
-    boxShadow: 'inset 0 -2px 0 var(--accent)',
+    borderBottomColor: 'var(--accent)',
   },
   main: {
     display: 'grid',
     alignContent: 'start',
     justifyItems: 'center',
-    padding: '0.45rem 0.9rem 1.2rem',
+    padding: '3.45rem 0.9rem 1rem',
   },
   content: {
     width: '100%',
     maxWidth: 'var(--max-width)',
     minHeight: '30rem',
-    padding: 'clamp(0.78rem, 1.3vw, 1rem)',
-    borderRadius: 'var(--radius-lg)',
-    background: 'var(--panel)',
-    border: '1px solid rgba(245, 246, 247, 0.08)',
-    boxShadow: 'var(--shadow)',
+    padding: 'clamp(0.35rem, 0.9vw, 0.55rem) 0 clamp(0.8rem, 1.1vw, 1rem)',
     animation: 'fade-in-up var(--dur-mid) var(--ease-out-quart)',
   },
 };

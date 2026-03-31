@@ -41,12 +41,12 @@ export function Card({
   footer?: ReactNode;
 }>) {
   return (
-      <article
+    <article
       style={{
         ...shared.card,
         borderColor: accent ? `${accent}44` : shared.card.borderColor,
         boxShadow: accent
-          ? `0 20px 50px color-mix(in srgb, ${accent} 16%, transparent)`
+          ? `0 6px 18px color-mix(in srgb, ${accent} 8%, transparent)`
           : shared.card.boxShadow,
       }}
     >
@@ -203,11 +203,11 @@ const shared: Record<string, CSSProperties> = {
   card: {
     display: 'grid',
     gap: '0.65rem',
-    padding: '0.9rem',
-    borderRadius: 'var(--radius-md)',
+    padding: '0.82rem',
+    borderRadius: 'var(--radius-sm)',
     background: 'var(--surface)',
     border: '1px solid rgba(245, 246, 247, 0.08)',
-    boxShadow: '0 12px 28px rgba(0, 0, 0, 0.16)',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
   },
   cardHeader: {
     display: 'grid',
@@ -243,13 +243,12 @@ const shared: Record<string, CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '2.45rem',
-    padding: '0.62rem 0.9rem',
-    borderRadius: '0.78rem',
+    minHeight: '2.25rem',
+    padding: '0.52rem 0.78rem',
+    borderRadius: 'var(--radius-sm)',
     color: 'var(--ink)',
     border: '1px solid transparent',
     fontWeight: 700,
-    boxShadow: '0 10px 20px rgba(0, 0, 0, 0.14)',
   },
   list: {
     display: 'grid',

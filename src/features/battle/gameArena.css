@@ -71,11 +71,11 @@
   overflow: hidden;
   display: grid;
   gap: 0.65rem;
-  padding: 0.72rem;
-  border-radius: var(--radius-md);
+  padding: 0.68rem;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(245, 246, 247, 0.08);
-  background: linear-gradient(180deg, rgba(27, 27, 50, 0.92), rgba(17, 17, 34, 0.98));
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  background: rgba(27, 27, 50, 0.9);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .game-arena__panel--coachFlash::after {
@@ -158,7 +158,7 @@
   min-height: 2.38rem;
   padding: 0.58rem 0.72rem;
   border: 1px solid rgba(245, 246, 247, 0.12);
-  border-radius: 0.72rem;
+  border-radius: var(--radius-sm);
   background: #0a0a23;
   color: var(--ink);
   font: inherit;
@@ -207,11 +207,7 @@
 }
 
 .game-arena__moveList {
-  height: 6.2rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 0.1rem;
-  scrollbar-gutter: stable;
+  overflow: visible;
 }
 
 .game-arena__moveTable {
