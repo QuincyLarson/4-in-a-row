@@ -57,10 +57,10 @@ describe('LessonPlayer', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(900);
     });
-    expect(screen.getByText('Correct!')).toBeInTheDocument();
+    expect(screen.getByText('Nice one')).toBeInTheDocument();
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1_000);
+      await vi.advanceTimersByTimeAsync(2_000);
     });
 
     expect(
@@ -82,7 +82,7 @@ describe('LessonPlayer', () => {
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
-      await vi.advanceTimersByTimeAsync(2_000);
+      await vi.advanceTimersByTimeAsync(3_000);
     });
 
     await act(async () => {
@@ -90,7 +90,25 @@ describe('LessonPlayer', () => {
       await vi.advanceTimersByTimeAsync(1_200);
     });
 
-    expect(screen.getByText('Use the same column again and notice the stack grow upward.')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Column 1 is playable, but column 2 fits this position better\./),
+    ).toBeInTheDocument();
     expect(screen.getByText('Hint: column 2.')).toBeInTheDocument();
+  });
+
+  it('shows richer why-this-works guidance in the coach rail', () => {
+    render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <LessonPlayer lesson={firstLesson} />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/Why this works:/)).toBeInTheDocument();
+    expect(screen.getByText(/Why the others miss:/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/This position is about watching gravity do the work\./),
+    ).toBeInTheDocument();
   });
 });

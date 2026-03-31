@@ -8,7 +8,9 @@ import {
   createBoard,
   getDropRow,
   legalMoves,
+  winningLinesFor,
   type BoardState,
+  type Side,
 } from '../../core';
 import {
   curriculumByWorld,
@@ -29,12 +31,11 @@ type LessonPlayerProps = {
 };
 
 type LessonOverlay =
-  | { kind: 'correct' }
-  | { kind: 'complete'; visibleStars: number }
+  | { kind: 'message'; text: string }
   | null;
 
-const STEP_SUCCESS_MS = 1_000;
-const LESSON_COMPLETE_MS = 800;
+const STEP_SUCCESS_MS = 2_000;
+const LESSON_COMPLETE_MS = 2_000;
 const ARENA_RESULT_SETTLE_MS = 900;
 
 export function LessonPlayer({ lesson }: LessonPlayerProps) {
@@ -49,6 +50,11 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
   const [overlay, setOverlay] = useState<LessonOverlay>(null);
   const timeoutsRef = useRef<number[]>([]);
   const step = lesson.steps[stepIndex];
+  const stepBoard = useMemo(
+    () => (step.position ? boardFromHumanMoves(step.position.moves, 'human') : createBoard('human')),
+    [step],
+  );
+  const stepGuidance = useMemo(() => lessonGuidance(step, stepBoard), [step, stepBoard]);
   const lessonNumber = stepIndex + 1;
   const totalLessons = lesson.steps.length;
   const usesArena = step.type === 'battle' || step.type === 'boss';
@@ -114,18 +120,16 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     if (stepIndex === lesson.steps.length - 1) {
       finishLessonProgress();
       setCoachStatus(null);
-      setOverlay({ kind: 'complete', visibleStars: 0 });
-      [100, 200, 300].forEach((delay, index) => {
-        queueTimeout(timeoutsRef, () => {
-          setOverlay({ kind: 'complete', visibleStars: index + 1 });
-        }, delay);
-      });
-      queueTimeout(timeoutsRef, continueToNextSection, LESSON_COMPLETE_MS);
+      setOverlay({ kind: 'message', text: 'Nice one' });
+      queueTimeout(timeoutsRef, () => {
+        setOverlay(null);
+        continueToNextSection();
+      }, LESSON_COMPLETE_MS);
       return;
     }
 
     setCoachStatus(null);
-    setOverlay({ kind: 'correct' });
+    setOverlay({ kind: 'message', text: 'Nice one' });
     queueTimeout(timeoutsRef, () => {
       setOverlay(null);
       setStepIndex((value) => value + 1);
@@ -143,13 +147,14 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
     }, ARENA_RESULT_SETTLE_MS);
   }
 
-  function handleWrong() {
+  function handleWrong(feedback?: string) {
     const hint = lessonHintColumn(step);
     setMistakes((value) => value + 1);
     queueStepReview(step);
     setCoachHint(hint);
     setCoachStatus(
-      step.failureMessage ??
+      feedback ??
+        step.failureMessage ??
         (hint ? `Not quite. Try column ${hint}.` : 'Not quite. Try again.'),
     );
   }
@@ -184,7 +189,7 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
               description={step.prompt}
               onFinish={(result) => handleArenaFinish(result)}
             />
-            <LessonOverlayView overlay={overlay?.kind === 'complete' ? overlay : null} />
+            <LessonOverlayView overlay={overlay} />
           </div>
         </div>
       ) : (
@@ -211,14 +216,20 @@ export function LessonPlayer({ lesson }: LessonPlayerProps) {
 
               <div className="lesson-player__coachState" aria-live="polite">
                 <p className="lesson-player__coachStatus">
-                  {coachStatus ??
-                    (step.type === 'concept'
-                      ? 'Make the move that fits the idea.'
-                      : 'Make one move.')}
+                  {coachStatus ?? stepGuidance.summary}
                 </p>
                 {coachHint ? (
                   <p className="lesson-player__coachHint">Hint: column {coachHint}.</p>
                 ) : null}
+              </div>
+
+              <div className="lesson-player__coachExplain">
+                <p className="lesson-player__coachExplainLine">
+                  <strong>Why this works:</strong> {stepGuidance.whyCorrect}
+                </p>
+                <p className="lesson-player__coachExplainLine">
+                  <strong>Why the others miss:</strong> {stepGuidance.whyNot}
+                </p>
               </div>
 
               {step.coachNotes?.map((note: CoachNote) => (
@@ -247,7 +258,7 @@ function LessonChallenge({
   reducedMotion: boolean;
   disabled: boolean;
   onCorrect: () => void;
-  onWrong: () => void;
+  onWrong: (feedback?: string) => void;
   onHint: () => void;
 }) {
   const startingBoard = useMemo(
@@ -289,7 +300,7 @@ function LessonChallenge({
         return;
       }
 
-      onWrong();
+      onWrong(wrongMoveFeedback(step, startingBoard, column, acceptedColumns));
       queueTimeout(timeoutsRef, () => {
         setBoard(startingBoard);
         setPreview(nearestPlayable(startingBoard, column));
@@ -344,31 +355,9 @@ function LessonOverlayView({ overlay }: { overlay: LessonOverlay }) {
     return null;
   }
 
-  if (overlay.kind === 'complete') {
-    return (
-      <div className="lesson-player__overlay">
-        <div className="lesson-player__overlayCard lesson-player__overlayCard--complete">
-          <p className="lesson-player__overlayLabel">Lesson complete</p>
-          <div className="lesson-player__stars" aria-hidden="true">
-            {[0, 1, 2].map((index) => (
-              <span
-                key={index}
-                className={`lesson-player__star${
-                  overlay.visibleStars > index ? ' is-visible' : ''
-                }`}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="lesson-player__overlay">
-      <p className="lesson-player__floatText">Correct!</p>
+      <p className="lesson-player__floatText">{overlay.text}</p>
     </div>
   );
 }
@@ -391,6 +380,201 @@ function lessonHintColumn(step: LessonStep) {
   const board = step.position ? boardFromHumanMoves(step.position.moves, 'human') : createBoard('human');
   const best = chooseBattleMove(board, 2).column;
   return best === null ? 4 : best + 1;
+}
+
+function lessonGuidance(step: LessonStep, board: BoardState) {
+  const accepted = acceptedColumnsForStep(step, board);
+  const legal = legalMoves(board).map((column) => column + 1);
+  const humanWins = immediateWinningColumns(board, 'human');
+  const cpuWins = immediateWinningColumns(board, 'cpu');
+  const primary = accepted[0];
+  const promptFallback =
+    step.type === 'concept'
+      ? 'Make the move that fits the idea.'
+      : 'Make one move that matches the position.';
+
+  if (accepted.length >= legal.length && legal.length > 0) {
+    return {
+      summary: 'Any legal column works here. Focus on the board mechanic this step is teaching.',
+      whyCorrect:
+        'This position is about watching gravity do the work. You choose a column and the chip falls to the lowest open square.',
+      whyNot:
+        'There is no hidden trick yet. The real point is noticing where the chip actually lands.',
+    };
+  }
+
+  if (accepted.length > 1) {
+    return {
+      summary: `Accepted moves: ${formatColumns(accepted)}. They all fit the same idea here.`,
+      whyCorrect: multiMoveReason(step, accepted),
+      whyNot:
+        'The unaccepted moves are legal, but they miss the lesson idea and leave you with less pressure, less control, or less support.',
+    };
+  }
+
+  if (primary && humanWins.includes(primary)) {
+    return {
+      summary: `Column ${primary} is the move. It wins immediately.`,
+      whyCorrect: `Column ${primary} completes a ${winningLineKind(board, 'human', primary)} four right now.`,
+      whyNot:
+        'The other legal moves do not finish the line, so they pass up a win that is already on the board.',
+    };
+  }
+
+  if (primary && cpuWins.includes(primary)) {
+    return {
+      summary: `Column ${primary} is urgent. It cuts off the opponent's immediate win.`,
+      whyCorrect: `If you do not play column ${primary}, the opponent can win there on the next move.`,
+      whyNot:
+        'Any other move leaves that threat standing, so the tactic still belongs to the opponent.',
+    };
+  }
+
+  if (primary) {
+    return {
+      summary: step.successMessage ?? promptFallback,
+      whyCorrect: conceptReason(step, primary, board),
+      whyNot: contrastReason(step, primary),
+    };
+  }
+
+  return {
+    summary: promptFallback,
+    whyCorrect: 'This move matches the key idea the board is trying to teach.',
+    whyNot: 'The other legal moves miss the main point of the position.',
+  };
+}
+
+function wrongMoveFeedback(
+  step: LessonStep,
+  board: BoardState,
+  selectedColumn: number,
+  accepted: number[],
+) {
+  const played = selectedColumn + 1;
+  const target = accepted[0];
+  const humanWins = immediateWinningColumns(board, 'human');
+  const cpuWins = immediateWinningColumns(board, 'cpu');
+
+  if (target && humanWins.includes(target) && !humanWins.includes(played)) {
+    return `Column ${played} is legal, but it does not finish the winning line. Column ${target} wins immediately.`;
+  }
+
+  if (target && cpuWins.includes(target) && played !== target) {
+    return `Column ${played} leaves the opponent's winning square open. Column ${target} is the block you cannot skip.`;
+  }
+
+  if (accepted.length > 1) {
+    return `Column ${played} misses the lesson idea here. Stay with ${formatColumns(accepted)} instead.`;
+  }
+
+  if (target) {
+    return `Column ${played} is playable, but column ${target} fits this position better. ${contrastReason(
+      step,
+      target,
+    )}`;
+  }
+
+  return step.failureMessage ?? 'Not quite. Try again.';
+}
+
+function immediateWinningColumns(board: BoardState, side: Side) {
+  const probe = { ...board, turn: side, winner: null, isDraw: false };
+  return legalMoves(probe)
+    .filter((column) => applyMove(probe, column).winner === side)
+    .map((column) => column + 1);
+}
+
+function winningLineKind(board: BoardState, side: Side, humanColumn: number) {
+  const moved = applyMove(
+    { ...board, turn: side, winner: null, isDraw: false },
+    humanColumn - 1,
+  );
+  const line = winningLinesFor(moved, side)[0];
+  if (!line) {
+    return 'four';
+  }
+
+  const [a, b] = line.cells;
+  if (a.col === b.col) {
+    return 'vertical';
+  }
+  if (a.row === b.row) {
+    return 'horizontal';
+  }
+  return 'diagonal';
+}
+
+function conceptReason(step: LessonStep, target: number, board: BoardState) {
+  const tags = step.reviewTags ?? [];
+  if (tags.includes('rules')) {
+    const landingRow = getDropRow(board, target - 1);
+    if (landingRow !== null && landingRow > 0) {
+      return `Column ${target} is right because the chip lands on the stack that is already there. That is the exact gravity pattern this step is teaching.`;
+    }
+    return `Column ${target} is right because it shows the board mechanic cleanly: you choose the column, and gravity chooses the row.`;
+  }
+  if (tags.includes('center') || tags.includes('opening')) {
+    return `Column ${target} is right because it keeps more future lines alive and gives you better central reach.`;
+  }
+  if (tags.includes('threat')) {
+    return `Column ${target} is right because it creates pressure the opponent has to answer, instead of adding a quiet chip.`;
+  }
+  if (tags.includes('double-threat')) {
+    return `Column ${target} is right because it builds toward two problems at once, or prevents that split before it appears.`;
+  }
+  if (tags.includes('diagonal')) {
+    return `Column ${target} is right because it creates or protects the support square the diagonal needs.`;
+  }
+  if (tags.includes('parity') || tags.includes('endgame') || tags.includes('defense')) {
+    return `Column ${target} is right because it keeps control of the important timing square instead of handing that access away.`;
+  }
+  return `Column ${target} is the move that matches the pattern this step is training.`;
+}
+
+function contrastReason(step: LessonStep, target: number) {
+  const tags = step.reviewTags ?? [];
+  if (tags.includes('rules')) {
+    return 'The other moves avoid the exact stack or landing pattern this step wants you to notice.';
+  }
+  if (tags.includes('center') || tags.includes('opening')) {
+    return `The other moves are legal, but they give you less influence and less flexibility than column ${target}.`;
+  }
+  if (tags.includes('threat')) {
+    return 'The other moves add a chip without forcing a reply, so they do not create the same pressure.';
+  }
+  if (tags.includes('double-threat')) {
+    return 'The other moves leave only one easy idea on the board, which is much easier for the opponent to answer.';
+  }
+  if (tags.includes('diagonal')) {
+    return 'The other moves do not make the diagonal playable, or they ignore the support square that matters first.';
+  }
+  if (tags.includes('parity') || tags.includes('endgame') || tags.includes('defense')) {
+    return 'The other moves look active, but they give away the timing or access that actually decides the position.';
+  }
+  return 'The other moves miss the main point of the position.';
+}
+
+function multiMoveReason(step: LessonStep, accepted: number[]) {
+  const acceptedText = formatColumns(accepted);
+  const tags = step.reviewTags ?? [];
+  if (tags.includes('center') || tags.includes('opening')) {
+    return `${acceptedText} all keep the structure healthy and preserve central influence.`;
+  }
+  if (tags.includes('double-threat') || tags.includes('threat')) {
+    return `${acceptedText} all keep the same forcing idea alive.`;
+  }
+  return `${acceptedText} all satisfy the tactical idea this step is teaching.`;
+}
+
+function formatColumns(columns: number[]) {
+  if (columns.length === 1) {
+    return `column ${columns[0]}`;
+  }
+  if (columns.length === 2) {
+    return `columns ${columns[0]} and ${columns[1]}`;
+  }
+  return `columns ${columns.slice(0, -1).join(', ')}, and ${columns.at(-1)}`;
 }
 
 function nearestPlayable(board: BoardState, preferred: number) {
