@@ -8,13 +8,10 @@ import { Card, CardGrid, InlineButton } from './shared';
 
 export function ProfilePage() {
   const { state, actions } = useAppState();
-  const [draftName, setDraftName] = useState('');
-  const [editingName, setEditingName] = useState(false);
   const [transferText, setTransferText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
   const totalLessons = curriculumLessons.length;
-  const nameValue = editingName ? draftName : (state.save.profile.displayName ?? '');
 
   const stats = useMemo(
     () => ({
@@ -37,29 +34,6 @@ export function ProfilePage() {
           <p style={profile.copy}>Completed lessons: {stats.lessons} of {totalLessons}</p>
           <p style={profile.copy}>Cleared bosses: {stats.bosses}</p>
           <p style={profile.copy}>Review due: {stats.reviewDue}</p>
-        </Card>
-        <Card title="Display Name" body="Used only in this browser.">
-          <label style={profile.label}>
-            Name
-            <input
-              value={nameValue}
-              onChange={(event) => {
-                setEditingName(true);
-                setDraftName(event.target.value);
-              }}
-              style={profile.input}
-            />
-          </label>
-          <InlineButton
-            tone="accent"
-            onClick={() => {
-              actions.setDisplayName(nameValue);
-              setEditingName(false);
-              setMessage('Display name updated.');
-            }}
-          >
-            Save name
-          </InlineButton>
         </Card>
       </CardGrid>
 
@@ -168,10 +142,8 @@ export function ProfilePage() {
             tone="accent"
             onClick={() => {
               try {
-                const imported = importSaveEnvelope(transferText);
+                importSaveEnvelope(transferText);
                 actions.importSave(transferText);
-                setDraftName(imported.profile.displayName ?? '');
-                setEditingName(false);
                 setMessage('Save imported successfully.');
               } catch {
                 setMessage('Import failed. Check that the JSON is complete.');
@@ -185,8 +157,6 @@ export function ProfilePage() {
             onClick={() => {
               actions.resetSave();
               setTransferText('');
-              setDraftName('');
-              setEditingName(false);
               setMessage('Progress reset to a fresh local profile.');
             }}
           >
@@ -215,20 +185,6 @@ const profile = {
     color: 'var(--muted)',
     lineHeight: 1.45,
     fontSize: '0.9rem',
-  },
-  label: {
-    display: 'grid',
-    gap: '0.4rem',
-    color: 'var(--muted)',
-    fontSize: '0.88rem',
-  },
-  input: {
-    minHeight: '2.4rem',
-    padding: '0.58rem 0.8rem',
-    borderRadius: '0.8rem',
-    background: 'rgba(255, 255, 255, 0.04)',
-    border: '1px solid rgba(127, 219, 255, 0.14)',
-    color: 'var(--ink)',
   },
   toggle: {
     display: 'flex',

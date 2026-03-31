@@ -110,27 +110,26 @@ describe('app routes', () => {
 
   it('hydrates the profile name from saved progress and round-trips import and export', async () => {
     const save = makeSave();
-    save.profile.displayName = 'Quincy';
     const importedSave = makeSave();
-    importedSave.profile.displayName = 'Ada';
 
     renderRoute('/profile', save);
 
-    const nameInput = (await screen.findByLabelText('Name')) as HTMLInputElement;
-    expect(nameInput.value).toBe('Quincy');
+    await screen.findByText('Completed lessons: 0 of 39');
     expect(
       screen.getByRole('link', { name: 'Read how the coach evaluates moves' }),
     ).toHaveAttribute('href', '/strategy/how-learn-drop-4-coach-evaluates-moves');
     expect(screen.getByText('Completed lessons: 0 of 39')).toBeInTheDocument();
     expect(screen.getByText('Cleared bosses: 0')).toBeInTheDocument();
     expect(screen.queryByText('Local settings, accessibility, and save transfer.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Display Name')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Name')).not.toBeInTheDocument();
     expect(screen.queryByText('Sound cues')).not.toBeInTheDocument();
     expect(screen.getByText('Piece styling')).toBeInTheDocument();
     expect(screen.getByText('CPU pace')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Export' }));
-    const textarea = screen.getAllByRole('textbox')[1] as HTMLTextAreaElement;
-    expect(textarea.value).toContain('"displayName": "Quincy"');
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textarea.value).toContain('"version": 1');
 
     fireEvent.change(textarea, {
       target: {
@@ -140,9 +139,8 @@ describe('app routes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Import' }));
 
     await waitFor(() => {
-      expect(nameInput.value).toBe('Ada');
+      expect(screen.getByText('Save imported successfully.')).toBeInTheDocument();
     });
-    expect(screen.getByText('Save imported successfully.')).toBeInTheDocument();
   });
 
   it('redirects the retired review route back to learn', async () => {
