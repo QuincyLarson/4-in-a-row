@@ -517,48 +517,61 @@ function GameArenaSession({
             <div className="game-arena__panelHeader">
               <h3 className="game-arena__panelTitle">Controls</h3>
             </div>
-            <div className="game-arena__buttonGrid">
-              <button
-                type="button"
-                className="game-arena__button"
-                disabled={!canDrop}
-                onClick={dropPreview}
-              >
-                Drop (Enter)
-              </button>
-              <button
-                type="button"
-                className="game-arena__button"
-                disabled={!canHint}
-                onClick={requestHint}
-              >
-                Hint (H)
-              </button>
-              <button
-                type="button"
-                className="game-arena__button game-arena__button--danger"
-                onClick={resetBoard}
-              >
-                Reset (R)
-              </button>
-            </div>
-            <div className="game-arena__utilityRow">
-              <button
-                type="button"
-                className="game-arena__textButton"
-                disabled={!canUndo || controlsDisabled}
-                onClick={undoMove}
-              >
-                Undo (U)
-              </button>
-              <button
-                type="button"
-                className="game-arena__textButton"
-                onClick={() => actions.setSound(!save.settings.soundEnabled)}
-              >
-                {save.settings.soundEnabled ? 'Mute (M)' : 'Sound on (M)'}
-              </button>
-            </div>
+            <ul className="game-arena__controlList">
+              <li>
+                <button
+                  type="button"
+                  className="game-arena__controlLink"
+                  disabled={!canDrop}
+                  onClick={dropPreview}
+                >
+                  <span>Drop</span>
+                  <span className="game-arena__controlKey">[Enter]</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="game-arena__controlLink"
+                  disabled={!canHint}
+                  onClick={requestHint}
+                >
+                  <span>Hint</span>
+                  <span className="game-arena__controlKey">[H]</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="game-arena__controlLink"
+                  onClick={resetBoard}
+                >
+                  <span>Reset</span>
+                  <span className="game-arena__controlKey">[R]</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="game-arena__controlLink"
+                  disabled={!canUndo || controlsDisabled}
+                  onClick={undoMove}
+                >
+                  <span>Undo</span>
+                  <span className="game-arena__controlKey">[U]</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="game-arena__controlLink"
+                  onClick={() => actions.setSound(!save.settings.soundEnabled)}
+                >
+                  <span>{save.settings.soundEnabled ? 'Mute' : 'Sound on'}</span>
+                  <span className="game-arena__controlKey">[M]</span>
+                </button>
+              </li>
+            </ul>
           </section>
 
           <section className="game-arena__panel">

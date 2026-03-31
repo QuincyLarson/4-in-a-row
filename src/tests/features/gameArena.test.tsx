@@ -157,9 +157,9 @@ describe('GameArena', () => {
     expect(screen.getByRole('heading', { name: 'Controls' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Coach' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Moves' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Drop (Enter)' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Hint (H)' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Reset (R)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Drop\s*\[Enter\]/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Hint\s*\[H\]/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Reset\s*\[R\]/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show hint' })).not.toBeInTheDocument();
   });
 
