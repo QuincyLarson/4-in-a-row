@@ -67,6 +67,8 @@
 }
 
 .game-arena__panel {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 0.65rem;
   padding: 0.72rem;
@@ -74,6 +76,27 @@
   border: 1px solid rgba(245, 246, 247, 0.08);
   background: linear-gradient(180deg, rgba(27, 27, 50, 0.92), rgba(17, 17, 34, 0.98));
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+}
+
+.game-arena__panel--coachFlash::after {
+  content: '';
+  position: absolute;
+  inset: -18%;
+  background: linear-gradient(
+    108deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.04) 42%,
+    rgba(255, 255, 255, 0.34) 49%,
+    rgba(255, 255, 255, 0.04) 56%,
+    transparent 72%
+  );
+  transform: translateX(-145%) skewX(-16deg);
+  animation: game-arena-coach-flash 760ms ease-out forwards;
+  pointer-events: none;
+}
+
+.game-arena__panel--coachFlashReduced::after {
+  animation-duration: 180ms;
 }
 
 .game-arena__panelHeader {
@@ -119,6 +142,10 @@
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.42;
+}
+
+.game-arena__bodyCopy--strong {
+  color: rgba(245, 246, 247, 0.98);
 }
 
 .game-arena__buttonGrid {
@@ -180,15 +207,19 @@
 }
 
 .game-arena__moveList {
-  height: 6.6rem;
+  height: 6.2rem;
   overflow-y: auto;
-  padding-right: 0.12rem;
+  overflow-x: hidden;
+  padding-right: 0.1rem;
+  scrollbar-gutter: stable;
 }
 
 .game-arena__moveTable {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  font-family: 'Hack', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .game-arena__moveRow {
@@ -196,18 +227,21 @@
 }
 
 .game-arena__moveNumber {
-  width: 1.45rem;
-  padding: 0.02rem 0.42rem 0.02rem 0;
+  width: 1.6rem;
+  padding: 0.03rem 0.42rem 0.03rem 0;
   text-align: left;
   vertical-align: top;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .game-arena__moveCell {
-  padding: 0.02rem 0.42rem 0.02rem 0;
+  width: 2.5rem;
+  padding: 0.03rem 0.48rem 0.03rem 0;
   vertical-align: top;
+  white-space: nowrap;
 }
 
 .game-arena__moveButton,
@@ -220,7 +254,8 @@
   font: inherit;
   font-weight: 700;
   font-size: 0.82rem;
-  line-height: 1.1;
+  line-height: 1.05;
+  white-space: nowrap;
 }
 
 .game-arena__moveButton {
@@ -241,6 +276,22 @@
 
 .game-arena__moveGap {
   color: rgba(245, 246, 247, 0.28);
+}
+
+@keyframes game-arena-coach-flash {
+  0% {
+    opacity: 0;
+    transform: translateX(-145%) skewX(-16deg);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(145%) skewX(-16deg);
+  }
 }
 
 @media (min-width: 980px) {

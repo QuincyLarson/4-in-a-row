@@ -206,6 +206,34 @@ describe('GameArena', () => {
     expect(screen.queryByText('Warmup Bot is choosing.')).not.toBeInTheDocument();
   });
 
+  it('flashes in updated coach advice and keeps it detailed', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <AppStateProvider>
+          <GameArena aiId="warmup-bot" title="Match" description="Play the bot" />
+        </AppStateProvider>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Drop in column 4' }));
+      await Promise.resolve();
+    });
+
+    const coachPanel = screen.getByRole('heading', { name: 'Coach' }).closest('section');
+    const coachLines = container.querySelectorAll('.game-arena__analysis .game-arena__bodyCopy');
+
+    expect(screen.getByText(/^You played D/i)).toBeInTheDocument();
+    expect(coachLines.length).toBeGreaterThan(1);
+    expect(coachPanel?.className).toContain('game-arena__panel--coachFlash');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(800);
+    });
+
+    expect(coachPanel?.className).not.toContain('game-arena__panel--coachFlash');
+  });
+
   it('resets immediately after a finished game with the reset hotkey', async () => {
     render(
       <MemoryRouter>

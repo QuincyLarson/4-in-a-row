@@ -47,7 +47,6 @@ type MoveLogRow = {
 
 type HumanAnalysisState = {
   analysis: MoveAnalysis;
-  humanPly: number;
 };
 
 const AI_ID_TO_LEVEL: Record<string, number> = {
@@ -102,10 +101,13 @@ function GameArenaSession({
   const [previewVisible, setPreviewVisible] = useState(true);
   const [replayPly, setReplayPly] = useState<number | null>(null);
   const [outcomeVisible, setOutcomeVisible] = useState(false);
+  const [coachFlashActive, setCoachFlashActive] = useState(false);
   const finishedRef = useRef(false);
   const soundTimeoutsRef = useRef<number[]>([]);
   const previewTimeoutRef = useRef<number | null>(null);
   const outcomeTimeoutRef = useRef<number | null>(null);
+  const coachFlashTimeoutRef = useRef<number | null>(null);
+  const analysisRequestRef = useRef(0);
   const cpuReadyAtRef = useRef(0);
   const sfx = useMemo(() => getSfxController(), []);
   const aiMeta = aiId ? battleAiById.get(aiId) : null;
@@ -116,10 +118,7 @@ function GameArenaSession({
   const replayBoard =
     replayPly !== null ? boardFromSessionReplay(baseBoard, sessionMoves, replayPly) : null;
   const displayBoard = replayBoard ?? board;
-  const visibleAnalysis =
-    analysisState && board.moves.length <= analysisState.humanPly + 1
-      ? analysisState.analysis
-      : null;
+  const visibleAnalysis = analysisState?.analysis ?? null;
   const activePreview = nearestPlayable(board, previewColumn ?? 3);
   const outcome = boardOutcome(board);
   const result =
@@ -144,6 +143,7 @@ function GameArenaSession({
   const nextAi = aiId ? nextLadderAi(aiId) : null;
   const canAdvance = result === 'win' && nextAi !== null && mode !== 'lesson';
   const controlsDisabled = replayPly !== null;
+  const coachLines = coachCopy(result, visibleAnalysis, hintColumn);
   const canDrop = Boolean(
     !controlsDisabled &&
       activePreview !== null &&
@@ -160,6 +160,7 @@ function GameArenaSession({
       clearQueuedSounds(soundTimeoutsRef);
       clearPreviewLock(previewTimeoutRef);
       clearOutcomeDelay(outcomeTimeoutRef);
+      clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
     };
   }, []);
 
@@ -300,20 +301,30 @@ function GameArenaSession({
     }
 
     if (!aiId) {
+      analysisRequestRef.current += 1;
       setAnalysisState(null);
       onHumanResolvedMove?.(column, null);
       return;
     }
 
+    const requestId = analysisRequestRef.current + 1;
+    analysisRequestRef.current = requestId;
     const nextAnalysis = await requestMoveAnalysis(
       boardBefore,
       column,
       AI_ID_TO_LEVEL.oracle,
     );
+    if (analysisRequestRef.current !== requestId) {
+      return;
+    }
     setAnalysisState({
       analysis: nextAnalysis,
-      humanPly: nextBoard.moves.length,
     });
+    triggerCoachFlash(
+      coachFlashTimeoutRef,
+      setCoachFlashActive,
+      save.settings.reducedMotion,
+    );
     onHumanResolvedMove?.(column, nextAnalysis);
   }
 
@@ -369,6 +380,8 @@ function GameArenaSession({
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
     clearOutcomeDelay(outcomeTimeoutRef);
+    clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
+    analysisRequestRef.current += 1;
     cpuReadyAtRef.current = 0;
     setBoard(baseBoard);
     setPreviewVisible(true);
@@ -388,6 +401,8 @@ function GameArenaSession({
     clearQueuedSounds(soundTimeoutsRef);
     clearPreviewLock(previewTimeoutRef);
     clearOutcomeDelay(outcomeTimeoutRef);
+    clearCoachFlash(coachFlashTimeoutRef, setCoachFlashActive);
+    analysisRequestRef.current += 1;
     cpuReadyAtRef.current = 0;
     const trim = aiId ? 2 : 1;
     const nextMoves = board.moves.slice(
@@ -549,7 +564,11 @@ function GameArenaSession({
             </div>
           </section>
 
-          <section className="game-arena__panel">
+          <section
+            className={`game-arena__panel${
+              coachFlashActive ? ' game-arena__panel--coachFlash' : ''
+            }${coachFlashActive && save.settings.reducedMotion ? ' game-arena__panel--coachFlashReduced' : ''}`}
+          >
             <div className="game-arena__panelHeader">
               <div className="game-arena__coachHeader">
                 {visibleAnalysis ? (
@@ -560,10 +579,17 @@ function GameArenaSession({
                 <h3 className="game-arena__panelTitle">Coach</h3>
               </div>
             </div>
-            <div className="game-arena__analysis">
-              <p className="game-arena__bodyCopy">
-                {coachCopy(result, visibleAnalysis, hintColumn)}
-              </p>
+            <div className="game-arena__analysis" aria-live="polite">
+              {coachLines.map((line, index) => (
+                <p
+                  key={`${index}-${line}`}
+                  className={`game-arena__bodyCopy${
+                    index === 0 ? ' game-arena__bodyCopy--strong' : ''
+                  }`}
+                >
+                  {line}
+                </p>
+              ))}
             </div>
           </section>
 
@@ -724,6 +750,30 @@ function clearOutcomeDelay(timeoutRef: MutableRefObject<number | null>) {
   }
 }
 
+function triggerCoachFlash(
+  timeoutRef: MutableRefObject<number | null>,
+  setFlashActive: (value: boolean) => void,
+  reducedMotion: boolean,
+) {
+  clearCoachFlash(timeoutRef, setFlashActive);
+  setFlashActive(true);
+  timeoutRef.current = window.setTimeout(() => {
+    timeoutRef.current = null;
+    setFlashActive(false);
+  }, reducedMotion ? 180 : 760);
+}
+
+function clearCoachFlash(
+  timeoutRef: MutableRefObject<number | null>,
+  setFlashActive: (value: boolean) => void,
+) {
+  if (timeoutRef.current !== null) {
+    window.clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+  setFlashActive(false);
+}
+
 function statusText(
   board: BoardState,
   thinking: boolean,
@@ -759,23 +809,78 @@ function coachCopy(
   hintColumn: number | null,
 ) {
   if (hintColumn !== null) {
-    return `Try column ${hintColumn + 1}.`;
-  }
-  if (result === 'win') {
-    return 'Clean finish.';
-  }
-  if (result === 'loss') {
-    return 'That line slipped. Replay it and try again.';
-  }
-  if (result === 'draw') {
-    return 'Solid hold.';
+    return [
+      `Hint: try ${columnLetter(hintColumn)}.`,
+      'It is the cleanest practical move in this position.',
+    ];
   }
   if (analysis) {
-    return analysis.bestMove !== null
-      ? `${analysis.reason} Better: column ${analysis.bestMove + 1}.`
-      : analysis.reason;
+    return analysisCopy(analysis);
   }
-  return 'Play the board. Hint only when stuck.';
+  if (result === 'win') {
+    return ['Clean finish.', 'You converted the final chance and closed the game.'];
+  }
+  if (result === 'loss') {
+    return [
+      'That line slipped.',
+      'Replay the key turn and look for the immediate win, block, or center move you missed.',
+    ];
+  }
+  if (result === 'draw') {
+    return ['Solid hold.', 'You kept the position level and denied the loss.'];
+  }
+  return [
+    'Make your move.',
+    'The coach keeps your last note on screen until the new analysis is ready.',
+  ];
+}
+
+function analysisCopy(analysis: MoveAnalysis) {
+  const played = analysis.playedMove !== null ? columnLetter(analysis.playedMove) : null;
+  const best = analysis.bestMove !== null ? columnLetter(analysis.bestMove) : null;
+
+  if (analysis.quality === 'best') {
+    return [
+      played
+        ? `You played ${played}, and that matches the best line.`
+        : 'That matches the best line.',
+      'You kept the pressure where it belonged and did not hand back an easy tactical reply.',
+    ];
+  }
+
+  if (analysis.quality === 'good') {
+    return [
+      played && best
+        ? `You played ${played}. It works, but ${best} was a little cleaner.`
+        : 'Good practical move.',
+      'Your move keeps the game playable, but the stronger line would have preserved a bit more pressure and denied more counterplay.',
+    ];
+  }
+
+  if (analysis.quality === 'inaccuracy') {
+    return [
+      played && best
+        ? `You played ${played}, but ${best} kept more of the edge.`
+        : 'That move gives back some of the edge.',
+      'Nothing collapses immediately, but the board becomes easier for the opponent to answer. Check wins, blocks, and center leverage before slower moves.',
+    ];
+  }
+
+  if (analysis.quality === 'mistake') {
+    return [
+      played && best
+        ? `You played ${played}, but ${best} was the key move here.`
+        : 'That was a meaningful slip.',
+      'This move lowered the position enough to give the opponent a clearer plan. The better line kept your threats alive and cut off easier replies.',
+    ];
+  }
+
+  return [
+    played && best
+      ? `You played ${played}, but ${best} was urgent.`
+      : 'That move missed an urgent idea.',
+    'It gives away a major tactical resource. In spots like this, scan for immediate wins and forced blocks before anything quieter.',
+  ];
 }
 
 function analysisTone(analysis: MoveAnalysis): 'best' | 'good' | 'bad' {
