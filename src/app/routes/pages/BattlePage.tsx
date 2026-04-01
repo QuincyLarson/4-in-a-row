@@ -5,7 +5,7 @@ import { battleAis } from '../../../content';
 import { GameArena } from '../../../features/battle/GameArena';
 import { findReviewTarget, isAiUnlocked } from '../../progression';
 import { useAppState } from '../../state/useAppState';
-import { Card, CardGrid, Chip, InlineButton } from './shared';
+import { Card, CardGrid, InlineButton } from './shared';
 
 export function BattlePage() {
   const {
@@ -85,15 +85,11 @@ export function BattlePage() {
               title={`Level ${ai.level}: ${ai.name}`}
               body={ai.summary}
               accent={tone}
-              footer={
-                <>
-                  <Chip tone={beaten ? 'success' : unlocked ? 'default' : 'warning'}>
-                    {beaten ? 'Cleared' : unlocked ? 'Ready' : 'Locked'}
-                  </Chip>
-                  {isSelected ? <Chip tone="warning">Current</Chip> : null}
-                </>
-              }
             >
+              <p style={battle.statusLine}>
+                Status: {beaten ? 'Cleared' : unlocked ? 'Ready' : 'Locked'}
+                {isSelected ? ' · Current match' : ''}
+              </p>
               {ai.role === 'analysis' ? (
                 <p style={battle.copy}>Coach analysis is already active during your matches.</p>
               ) : (
@@ -127,5 +123,12 @@ const battle = {
     color: 'var(--muted)',
     lineHeight: 1.45,
     fontSize: '0.9rem',
+  },
+  statusLine: {
+    margin: 0,
+    color: 'var(--muted)',
+    lineHeight: 1.35,
+    fontSize: '0.78rem',
+    letterSpacing: '0.01em',
   },
 };

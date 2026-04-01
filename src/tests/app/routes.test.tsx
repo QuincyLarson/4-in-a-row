@@ -96,6 +96,7 @@ describe('app routes', () => {
     expect(screen.queryByText('Battle the ladder.')).not.toBeInTheDocument();
     expect(screen.queryByText('Current: Level 0')).not.toBeInTheDocument();
     expect(screen.getByText('Level 2: Center Sentinel')).toBeInTheDocument();
+    expect(screen.getByText('Status: Ready · Current match')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Beat / }).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Current match' })).toBeInTheDocument();
 
@@ -196,6 +197,8 @@ describe('app routes', () => {
     renderRoute('/strategy/how-learn-drop-4-coach-evaluates-moves');
     await screen.findByRole('heading', { name: 'How Learn Drop 4 Coach Evaluates Moves' });
     expect(screen.getByText(/re-searches the resulting position from the opponent side/i)).toBeInTheDocument();
+    expect(screen.queryByText('connect 4 heuristics')).not.toBeInTheDocument();
+    expect(screen.queryByText('move evaluation')).not.toBeInTheDocument();
   });
 
 });

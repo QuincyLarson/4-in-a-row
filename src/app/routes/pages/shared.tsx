@@ -60,32 +60,6 @@ export function Card({
   );
 }
 
-export function Chip({
-  children,
-  tone = 'default',
-}: PropsWithChildren<{ tone?: 'default' | 'success' | 'warning' | 'danger' }>) {
-  const tones: Record<string, CSSProperties> = {
-    default: {
-      background: 'rgba(153, 201, 255, 0.12)',
-      color: 'var(--accent-2)',
-    },
-    success: {
-      background: 'rgba(172, 209, 87, 0.14)',
-      color: 'var(--success)',
-    },
-    warning: {
-      background: 'rgba(241, 190, 50, 0.14)',
-      color: 'var(--warning)',
-    },
-    danger: {
-      background: 'rgba(240, 141, 141, 0.12)',
-      color: 'var(--danger)',
-    },
-  };
-
-  return <span style={{ ...shared.chip, ...tones[tone] }}>{children}</span>;
-}
-
 export function InlineButton({
   children,
   onClick,
@@ -227,17 +201,6 @@ const shared: Record<string, CSSProperties> = {
     display: 'flex',
     gap: '0.45rem',
     flexWrap: 'wrap',
-  },
-  chip: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '0.22rem 0.48rem',
-    borderRadius: '0.55rem',
-    fontSize: '0.68rem',
-    fontWeight: 700,
-    letterSpacing: '0.04em',
-    textTransform: 'uppercase',
-    border: '1px solid rgba(245, 246, 247, 0.05)',
   },
   button: {
     display: 'inline-flex',

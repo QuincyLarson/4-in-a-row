@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 
 import { curriculumByLesson, strategyArticleBySlug } from '../../../content';
-import { Card, Chip, PageSection } from './shared';
+import { Card, PageSection } from './shared';
 
 export function StrategyPage() {
   const { slug = '' } = useParams();
@@ -29,13 +29,6 @@ export function StrategyPage() {
       eyebrow="Strategy"
       title={article.title}
       body={article.description}
-      actions={
-        <>
-          {article.keywords.slice(0, 3).map((keyword) => (
-            <Chip key={keyword}>{keyword}</Chip>
-          ))}
-        </>
-      }
     >
       {article.sections.map((section) => (
         <Card key={section.title} title={section.title} body={section.body}>
