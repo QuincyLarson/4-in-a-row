@@ -129,14 +129,15 @@ export function ProfilePage() {
             </fieldset>
           </Card>
 
+        </div>
+
+        <aside style={profile.sideColumn}>
           <Card title="Coach heuristics" body="See the tactical checks and positional rules behind the coach panel.">
             <Link to="/strategy/how-learn-drop-4-coach-evaluates-moves" style={profile.link}>
               Read how the coach evaluates moves
             </Link>
           </Card>
-        </div>
 
-        <aside style={profile.sideColumn}>
           <Card
             title="Export / Import Progress"
             body="Export or import the versioned save envelope."
@@ -251,8 +252,6 @@ const profile = {
     display: 'grid',
     gap: '0.95rem',
     alignSelf: 'start',
-    position: 'sticky' as const,
-    top: '4.6rem',
   },
   copy: {
     margin: 0,
