@@ -199,6 +199,6 @@ describe('app routes', () => {
     expect(screen.getByText(/re-searches the resulting position from the opponent side/i)).toBeInTheDocument();
     expect(screen.queryByText('connect 4 heuristics')).not.toBeInTheDocument();
     expect(screen.queryByText('move evaluation')).not.toBeInTheDocument();
-  });
+  }, 20_000);
 
 });

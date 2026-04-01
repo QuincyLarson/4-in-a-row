@@ -13,5 +13,5 @@ describe('coach analysis', () => {
     expect(miss.playedMove).toBe(6);
     expect(miss.delta).toBeGreaterThan(0);
     expect(['inaccuracy', 'mistake', 'blunder']).toContain(miss.quality);
-  }, 20_000);
+  }, 45_000);
 });

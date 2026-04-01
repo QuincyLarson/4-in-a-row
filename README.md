@@ -19,6 +19,12 @@ npm run dev
 
 The app uses a relative Vite `base` and `HashRouter`, so local and GitHub Pages builds share the same routing model.
 
+Use a different local port if `5173` is busy:
+
+```bash
+npm run dev -- --port 4174
+```
+
 ## Verification
 ```bash
 npm run lint
@@ -35,20 +41,21 @@ npm run check
 4. The workflow runs `npm run check`, uploads `dist/`, and deploys it to Pages.
 
 ## App routes
-- `#/` landing page
-- `#/play` instant play
 - `#/learn` curriculum map
 - `#/lesson/:lessonId` lesson runner
 - `#/battle` AI ladder
-- `#/review` review queue
 - `#/profile` local settings and import/export
-- `#/sandbox` open board
-- `#/strategy/:slug` static strategy pages
+- `#/strategy/:slug` strategy and coach articles
+
+Compatibility redirects still resolve:
+- `#/` redirects to `#/learn`
+- `#/play` and `#/play/connect-4-online` redirect to `#/battle`
+- `#/review` redirects to `#/learn`
+
+Secondary utility routes:
+- `#/sandbox`
 - `#/about`
 - `#/credits`
-
-SEO-friendly aliases from the PRD also resolve:
-- `#/play/connect-4-online`
 - `#/learn/connect-4-course`
 
 ## Architecture summary
@@ -65,4 +72,4 @@ More detail lives in [`docs/architecture-notes.md`](/Users/m/Documents/code/4-in
 - Main board visuals are inline SVG only.
 - Sound effects are synthesised with the Web Audio API only.
 - Progress persists in localStorage with a versioned envelope and migration path.
-- The board supports hover preview, keyboard input, reduced motion, pattern mode, high contrast, mute, import/export, undo in sandbox, and a playable review queue.
+- The board supports hover preview, keyboard input, reduced motion, pattern mode, high contrast, mute, import/export, undo in sandbox, and review scheduling that feeds lesson drills.

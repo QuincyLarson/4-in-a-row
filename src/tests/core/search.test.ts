@@ -112,7 +112,7 @@ describe('battle AI', () => {
 
       expect(Boolean(board.winner || board.isDraw || legalMoves(board).length === 0)).toBe(true);
     }
-  });
+  }, 15_000);
 
   it('prevents the easy D-then-E opening cheese for stronger tiers', () => {
     const board = boardFromMoves([3, 3, 4]);

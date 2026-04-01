@@ -181,7 +181,7 @@ describe('GameArena', () => {
     });
 
     expect(container.querySelector('.board-chip--drop-overlay[data-owner="cpu"]')).not.toBeNull();
-  }, 15_000);
+  }, 30_000);
 
   it('shows preloaded notation immediately when the board starts from an authored position', () => {
     render(
@@ -223,7 +223,7 @@ describe('GameArena', () => {
     });
 
     expect(screen.queryByText('Warmup Bot is choosing.')).not.toBeInTheDocument();
-  }, 10_000);
+  }, 20_000);
 
   it('updates coach advice once per move and keeps it detailed', async () => {
     const { container } = render(

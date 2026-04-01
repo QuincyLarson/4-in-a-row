@@ -27,7 +27,8 @@ Learn Drop 4 is a static Vite + React + TypeScript app deployed with `HashRouter
 - The app uses React context plus reducer-backed actions instead of a separate store library.
 - A single versioned save envelope keeps settings, progress, review entries, and recent games together.
 - Import/export is plain JSON; migrations sanitize partial or stale envelopes.
-- Progression stays world-gated, battle opponents unlock off curriculum milestones, and the review queue can replay authored drills directly.
+- Curriculum worlds stay gated by lesson completion plus boss clears, while battle opponents unlock off ladder wins.
+- Review scheduling reuses authored lesson drills instead of sending the learner to a separate review surface.
 
 ## Rendering and feel
 - Main play uses inline SVG, not canvas.
