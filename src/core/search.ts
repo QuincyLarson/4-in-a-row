@@ -6,6 +6,7 @@ import {
   cellOwner,
   getDropRow,
   legalMoves,
+  opponent,
   orderedLegalMoves,
 } from './board';
 import { AI_PROFILES, ORACLE_ANALYSIS, getAIProfile } from './aiProfiles';
@@ -16,7 +17,7 @@ import {
   scoreMoveHeuristic,
 } from './eval';
 import { lookupOpeningBook } from './openingBook';
-import type { AIProfile, MoveAnalysis, SearchResult } from './types';
+import type { AIProfile, MoveAnalysis, MoveQuality, SearchResult } from './types';
 import type { BoardState, Side } from './types';
 
 type TTFlag = 'exact' | 'lower' | 'upper';
@@ -652,6 +653,8 @@ export function analyzeMove(
   const bestResult = chooseBattleMove(boardBeforeMove, profile, {
     resetTranspositionTable: false,
   });
+  const side = boardBeforeMove.turn;
+  const opponentSide = opponent(side);
   const bestMove = bestResult.column;
   const bestScore =
     bestMove === null
@@ -662,17 +665,57 @@ export function analyzeMove(
       ? bestScore
       : scoreAnalyzedMove(boardBeforeMove, playedColumn, profile);
   const delta = Math.max(0, bestScore - playedScore);
-  const quality = classifyScoreDelta(delta);
-  const reason =
-    quality === 'best'
-      ? 'This move matches the strongest line the analysis found.'
-      : quality === 'good'
-        ? 'This move stays close to the best line.'
-        : quality === 'inaccuracy'
-          ? 'This move gives up some edge, but the position remains manageable.'
-          : quality === 'mistake'
-            ? 'This move drops the evaluation in a meaningful way.'
-            : 'This move gives away a major advantage or tactical resource.';
+  const boardAfterMove = applyMove(boardBeforeMove, playedColumn);
+  const immediateWinsNow = findWinningMoves(boardBeforeMove, side);
+  const forcedBlocksNow =
+    immediateWinsNow.length === 0 ? findWinningMoves(boardBeforeMove, opponentSide) : [];
+  const opponentWinsAfterMove = findWinningMoves(boardAfterMove, opponentSide);
+  const ourWinsAfterMove = boardAfterMove.winner === side ? [] : findWinningMoves(boardAfterMove, side);
+  const missedImmediateWin =
+    immediateWinsNow.length > 0 && !immediateWinsNow.includes(playedColumn);
+  const leftImmediateLoss =
+    forcedBlocksNow.length > 0 && opponentWinsAfterMove.length > 0;
+  const blockedThreatAndCounterpunched =
+    forcedBlocksNow.length > 0 &&
+    opponentWinsAfterMove.length === 0 &&
+    ourWinsAfterMove.length > 0;
+  const cleanForcedBlock =
+    forcedBlocksNow.length > 0 &&
+    opponentWinsAfterMove.length === 0 &&
+    ourWinsAfterMove.length === 0;
+  let quality = classifyScoreDelta(delta);
+
+  if (missedImmediateWin || leftImmediateLoss) {
+    quality = 'blunder';
+  } else if (blockedThreatAndCounterpunched) {
+    quality = raiseQualityFloor(quality, 'good');
+  }
+
+  const reason = missedImmediateWin
+    ? `An immediate win was available in ${formatColumns(immediateWinsNow)}, so passing on it is a major tactical miss.`
+    : leftImmediateLoss
+      ? opponentWinsAfterMove.length === 1
+        ? `The opponent still wins immediately in ${formatColumns(opponentWinsAfterMove)} after this move.`
+        : `The opponent still has immediate wins in ${formatColumns(opponentWinsAfterMove)} after this move.`
+      : boardAfterMove.winner === side
+        ? 'This move wins immediately, so it is the strongest tactical finish on the board.'
+        : blockedThreatAndCounterpunched
+          ? ourWinsAfterMove.length === 1
+            ? `This move blocks the urgent threat and creates a direct winning reply in ${formatColumns(ourWinsAfterMove)}.`
+            : `This move blocks the urgent threat and creates multiple winning replies in ${formatColumns(ourWinsAfterMove)}.`
+          : cleanForcedBlock
+            ? forcedBlocksNow.length === 1
+              ? `This move covers the urgent winning square in ${formatColumns(forcedBlocksNow)} and keeps the game alive.`
+              : `This move covers the urgent winning squares in ${formatColumns(forcedBlocksNow)} and keeps the game alive.`
+          : quality === 'best'
+            ? 'This move matches the strongest line the analysis found.'
+            : quality === 'good'
+              ? 'This move stays close to the best line.'
+              : quality === 'inaccuracy'
+                ? 'This move gives up some edge, but the position remains manageable.'
+                : quality === 'mistake'
+                  ? 'This move drops the evaluation in a meaningful way.'
+                  : 'This move gives away a major advantage or tactical resource.';
 
   return {
     quality,
@@ -683,6 +726,22 @@ export function analyzeMove(
     delta,
     reason,
   };
+}
+
+function raiseQualityFloor(current: MoveQuality, minimum: MoveQuality): MoveQuality {
+  const rank: Record<MoveQuality, number> = {
+    blunder: 0,
+    mistake: 1,
+    inaccuracy: 2,
+    good: 3,
+    best: 4,
+  };
+
+  return rank[current] >= rank[minimum] ? current : minimum;
+}
+
+function formatColumns(columns: number[]): string {
+  return columns.map((column) => String.fromCharCode(65 + column)).join(', ');
 }
 
 function analysisProfile(profile: AIProfile): AIProfile {
